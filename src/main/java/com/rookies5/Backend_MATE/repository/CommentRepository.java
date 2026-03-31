@@ -3,5 +3,8 @@ package com.rookies5.Backend_MATE.repository;
 import com.rookies5.Backend_MATE.entity.Comment;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
+
 public interface CommentRepository extends JpaRepository<Comment, Long> {
+    List<Comment> findAllByPostIdOrderByCreatedAtAsc(Long postId);
 }

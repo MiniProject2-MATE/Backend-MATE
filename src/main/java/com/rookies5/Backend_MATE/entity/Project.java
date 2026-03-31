@@ -71,4 +71,12 @@ public class Project extends BaseEntity {
             this.status = ProjectStatus.CLOSED; // 정원 충족 시 상태 자동 마감
         }
     }
+
+    public void updateProject(String title, String content, Integer recruitCount, java.time.LocalDate endDate, com.rookies5.Backend_MATE.entity.enums.OnOffline onOffline) {
+        if (title != null) this.title = title;
+        if (content != null) this.content = content;
+        if (recruitCount != null) this.recruitCount = recruitCount;
+        if (endDate != null) this.endDate = endDate;
+        if (onOffline != null) this.onOffline = onOffline;
+    }
 }

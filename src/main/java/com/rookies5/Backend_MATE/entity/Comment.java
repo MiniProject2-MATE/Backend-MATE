@@ -34,5 +34,7 @@ public class Comment extends BaseEntity {
     private String content;
 
     // ==== 비즈니스 메서드 ====
-    public void updateContent(String content) { this.content = content; }
+    public void updateComment(String content) {
+        if (content != null) this.content = content;
+    }
 }

@@ -40,4 +40,9 @@ public class BoardPost extends BaseEntity {
     private Integer viewCount = 0;
 
     public void incrementViewCount() { this.viewCount++; }
+
+    public void updatePost(String title, String content) {
+        if (title != null) this.title = title;
+        if (content != null) this.content = content;
+    }
 }

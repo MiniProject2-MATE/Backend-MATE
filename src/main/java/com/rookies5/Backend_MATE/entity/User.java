@@ -64,10 +64,11 @@ public class User extends BaseEntity {
         this.password = encodedPassword;
     }
 
-    public void updateProfile(String nickname, String profileImg, Position position, Set<String> techStacks) {
-        this.nickname = nickname;
-        this.profileImg = profileImg;
-        this.position = position;
-        this.techStacks = techStacks;
+    public void updateProfile(String nickname, com.rookies5.Backend_MATE.entity.enums.Position position, java.util.Set<String> techStacks, String profileImg, String phoneNumber) {
+        if (nickname != null) this.nickname = nickname;
+        if (position != null) this.position = position;
+        if (techStacks != null) this.techStacks = techStacks;
+        if (profileImg != null) this.profileImg = profileImg;
+        if (phoneNumber != null) this.phoneNumber = phoneNumber;
     }
 }

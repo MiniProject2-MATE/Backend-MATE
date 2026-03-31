@@ -46,4 +46,8 @@ public class Application {
 
     public void accept() { this.status = ApplicationStatus.ACCEPTED; }
     public void reject() { this.status = ApplicationStatus.REJECTED; }
+
+    public void updateStatus(com.rookies5.Backend_MATE.entity.enums.ApplicationStatus status) {
+        if (status != null) this.status = status;
+    }
 }
