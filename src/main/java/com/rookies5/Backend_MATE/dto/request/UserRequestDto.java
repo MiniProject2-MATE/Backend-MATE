@@ -22,7 +22,7 @@ public class UserRequestDto {
     private String nickname;
 
     @NotBlank(message = "전화번호는 필수입니다.")
-    @Pattern(regexp = "^01(?:0|1|[6-9])(?:\\d{3}|\\d{4})\\d{4}$", message = "하이픈(-) 없이 숫자만 입력해주세요.")
+    @Pattern(regexp = "^\\d{11}$", message = "하이픈(-) 없이 숫자만 입력해주세요.")
     private String phoneNumber;
 
     private Position position;

@@ -12,7 +12,7 @@ import java.time.LocalDate;
 public class ProjectResponseDto {
     private Long id;
     private Long ownerId;
-    private String ownerNickname; // 💡 방장 이름 (DTO 전용)
+    private String ownerNickname; // 방장 이름
     
     private Category category;
     private String title;
@@ -24,5 +24,5 @@ public class ProjectResponseDto {
     private OnOffline onOffline;
     
     private LocalDate endDate;
-    private Long remainingDays; // 💡 마감까지 남은 일수 (D-Day 계산용)
+    private Long remainingDays; // 마감까지 남은 일수 (D-Day 계산용)
 }

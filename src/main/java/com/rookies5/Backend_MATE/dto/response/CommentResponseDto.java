@@ -10,8 +10,7 @@ public class CommentResponseDto {
     private Long id;
     private Long postId;
     private Long authorId;
-    
-    // 💡 지호 님이 추가한 '친절한' 변수들
+
     private String authorNickname;
     private String authorProfileImg;
     

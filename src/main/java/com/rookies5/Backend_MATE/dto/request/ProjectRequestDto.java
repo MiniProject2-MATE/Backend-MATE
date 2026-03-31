@@ -26,7 +26,7 @@ public class ProjectRequestDto {
     private String content;
 
     @NotNull(message = "모집 인원은 필수입니다.")
-    @Min(value = 2, message = "모집 인원은 최소 2명 이상이어야 합니다.")
+    @Min(value = 2, message = "방장을 포함한 총 인원은 최소 2명 이상이어야 합니다.")
     private Integer recruitCount;
 
     @NotNull(message = "진행 방식은 필수입니다.")

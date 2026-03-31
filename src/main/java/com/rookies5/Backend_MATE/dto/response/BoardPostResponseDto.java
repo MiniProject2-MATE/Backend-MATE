@@ -10,11 +10,11 @@ import java.time.LocalDateTime;
 public class BoardPostResponseDto {
     private Long id;
     private Long projectId;
-    private String projectTitle; // 💡 어떤 프로젝트의 게시판인지 제목 추가
+    private String projectTitle; // 어떤 프로젝트의 게시판인지 제목 추가
     private Long authorId;
-    private String authorNickname; // 💡 작성자 이름
+    private String authorNickname; // 작성자 이름
     private String title;
     private String content;
     private Integer viewCount;
-    private LocalDateTime createdAt; // 💡 BaseEntity의 필드
+    private LocalDateTime createdAt; // BaseEntity의 필드
 }

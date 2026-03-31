@@ -14,5 +14,6 @@ public class ProjectMemberRequestDto {
     @NotNull(message = "유저 ID는 필수입니다.")
     private Long userId;
 
+    @NotNull(message = "멤버 권한(Role) 지정은 필수입니다.")
     private MemberRole role; // 필요시 요청에서 지정 (보통 MEMBER)
 }

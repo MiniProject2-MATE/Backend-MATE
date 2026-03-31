@@ -44,8 +44,9 @@ public class DefaultExceptionAdvice {
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException e) {
-        log.warn("Validation exception: {}", e.getMessage());
+        log.warn("Validation exception occurred");
 
+        // 1. 모든 에러 필드 수집
         List<ErrorResponse.FieldError> fieldErrors = e.getBindingResult().getFieldErrors().stream()
                 .map(fieldError -> ErrorResponse.FieldError.builder()
                         .field(fieldError.getField())
@@ -54,16 +55,20 @@ public class DefaultExceptionAdvice {
                         .build())
                 .collect(Collectors.toList());
 
+        // 2. ErrorCode.VALIDATION_ERROR에 정의된 HttpStatus(BAD_REQUEST)를 동적으로 사용
+        ErrorCode errorCode = ErrorCode.VALIDATION_ERROR;
+
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .error(ErrorResponse.ErrorDetail.builder()
-                        .code(ErrorCode.VALIDATION_ERROR.getCode())
-                        .message(ErrorCode.VALIDATION_ERROR.getMessage())
+                        .code(errorCode.getCode())
+                        .message(errorCode.getMessage())
                         .fieldErrors(fieldErrors)
                         .build())
                 .timestamp(LocalDateTime.now())
                 .build();
 
-        return ResponseEntity.badRequest().body(errorResponse);
+        // ResponseEntity.badRequest() 대신 status() 사용
+        return ResponseEntity.status(errorCode.getHttpStatus()).body(errorResponse);
     }
 
     /**
