@@ -1,8 +1,8 @@
 package com.rookies5.Backend_MATE.entity;
 
-import com.rookies5.Backend_MATE.entity.BaseEntity;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.Where;
 
@@ -10,6 +10,8 @@ import org.hibernate.annotations.Where;
 @Table(name = "comments")
 @Where(clause = "deleted_at IS NULL")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
 @Getter
 public class Comment extends BaseEntity {
 
@@ -28,8 +30,9 @@ public class Comment extends BaseEntity {
 
     @Column(nullable = false, length = 500)
     @NotBlank(message = "댓글 내용은 필수입니다")
-    @Size(min = 1, max = 500, message = "댓글은 1~500자 사이여야 합니다")
+    @Size(min = 1, max = 500)
     private String content;
 
+    // ==== 비즈니스 메서드 ====
     public void updateContent(String content) { this.content = content; }
 }

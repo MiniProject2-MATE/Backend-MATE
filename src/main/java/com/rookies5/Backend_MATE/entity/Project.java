@@ -14,6 +14,8 @@ import java.time.LocalDate;
 @Table(name = "projects", indexes = {@Index(name = "idx_status", columnList = "status")})
 @Where(clause = "deleted_at IS NULL")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
 @Getter
 public class Project extends BaseEntity {
 
@@ -44,6 +46,7 @@ public class Project extends BaseEntity {
     @Max(value = 20, message = "모집 인원은 20명을 넘을 수 없습니다")
     private Integer recruitCount;
 
+    @Builder.Default
     @Column(name = "current_count", nullable = false)
     private Integer currentCount = 0;
 
@@ -51,6 +54,7 @@ public class Project extends BaseEntity {
     @Column(name = "on_offline", nullable = false, length = 20)
     private OnOffline onOffline;
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private ProjectStatus status = ProjectStatus.RECRUITING;

@@ -4,13 +4,17 @@ import com.rookies5.Backend_MATE.entity.enums.MemberRole;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "project_members", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"project_id", "user_id"})
+        @UniqueConstraint(columnNames = {"project_id", "user_id"})
 })
+@EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
 @Getter
 public class ProjectMember {
 

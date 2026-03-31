@@ -16,6 +16,8 @@ import java.util.*;
 })
 @Where(clause = "deleted_at IS NULL")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
 @Getter
 public class User extends BaseEntity {
 
@@ -48,11 +50,13 @@ public class User extends BaseEntity {
     @NotBlank(message = "전화번호는 필수입니다")
     private String phoneNumber;
 
+    @Builder.Default
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "user_tech_stacks", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "tech_stack", length = 50)
     private Set<String> techStacks = new HashSet<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL)
     private List<Project> myProjects = new ArrayList<>();
 

@@ -1,8 +1,7 @@
 package com.rookies5.Backend_MATE.entity;
 
-import com.rookies5.Backend_MATE.entity.BaseEntity;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import org.hibernate.annotations.Where;
 
@@ -10,6 +9,8 @@ import org.hibernate.annotations.Where;
 @Table(name = "board_posts")
 @Where(clause = "deleted_at IS NULL")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
 @Getter
 public class BoardPost extends BaseEntity {
 
@@ -34,6 +35,7 @@ public class BoardPost extends BaseEntity {
     @NotBlank(message = "내용은 필수입니다")
     private String content;
 
+    @Builder.Default
     @Column(name = "view_count", nullable = false)
     private Integer viewCount = 0;
 
