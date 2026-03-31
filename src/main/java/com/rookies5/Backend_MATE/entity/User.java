@@ -1,0 +1,69 @@
+package com.rookies5.Backend_MATE.entity;
+
+import com.rookies5.Backend_MATE.entity.BaseEntity;
+import com.rookies5.Backend_MATE.entity.enums.Position;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+import lombok.*;
+import org.hibernate.annotations.Where;
+import java.util.*;
+
+@Entity
+@Table(name = "users", indexes = {
+    @Index(name = "idx_email", columnList = "email"),
+    @Index(name = "idx_nickname", columnList = "nickname"),
+    @Index(name = "idx_phone_number", columnList = "phone_number")
+})
+@Where(clause = "deleted_at IS NULL")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter
+public class User extends BaseEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "user_id")
+    private Long id;
+
+    @Column(nullable = false, unique = true, length = 100)
+    @Email(message = "이메일 형식이 올바르지 않습니다")
+    @NotBlank(message = "이메일은 필수입니다")
+    private String email;
+
+    @Column(nullable = false, length = 255)
+    @NotBlank(message = "비밀번호는 필수입니다")
+    private String password;
+
+    @Column(nullable = false, unique = true, length = 10)
+    @Size(min = 2, max = 10, message = "닉네임은 2~10자 사이여야 합니다")
+    private String nickname;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private Position position;
+
+    @Column(name = "profile_img", length = 255)
+    private String profileImg;
+
+    @Column(name = "phone_number", nullable = false, unique = true, length = 20)
+    @NotBlank(message = "전화번호는 필수입니다")
+    private String phoneNumber;
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "user_tech_stacks", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "tech_stack", length = 50)
+    private Set<String> techStacks = new HashSet<>();
+
+    @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL)
+    private List<Project> myProjects = new ArrayList<>();
+
+    public void updatePassword(String encodedPassword) {
+        this.password = encodedPassword;
+    }
+
+    public void updateProfile(String nickname, String profileImg, Position position, Set<String> techStacks) {
+        this.nickname = nickname;
+        this.profileImg = profileImg;
+        this.position = position;
+        this.techStacks = techStacks;
+    }
+}

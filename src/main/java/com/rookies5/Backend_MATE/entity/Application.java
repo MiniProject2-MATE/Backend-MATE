@@ -1,0 +1,44 @@
+package com.rookies5.Backend_MATE.entity;
+
+import com.rookies5.Backend_MATE.entity.enums.ApplicationStatus;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "applications")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter
+public class Application {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "application_id")
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "project_id", nullable = false)
+    private Project project;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "applicant_id", nullable = false)
+    private User applicant;
+
+    @Column(nullable = false, length = 500)
+    @NotBlank
+    @Size(min = 10, max = 500, message = "지원 동기는 10~500자 사이여야 합니다")
+    private String message;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private ApplicationStatus status = ApplicationStatus.PENDING;
+
+    @CreatedDate
+    @Column(name = "applied_at", nullable = false, updatable = false)
+    private LocalDateTime appliedAt;
+
+    public void accept() { this.status = ApplicationStatus.ACCEPTED; }
+    public void reject() { this.status = ApplicationStatus.REJECTED; }
+}
