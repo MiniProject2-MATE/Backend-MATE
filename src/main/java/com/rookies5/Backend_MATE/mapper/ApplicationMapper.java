@@ -1,6 +1,5 @@
 package com.rookies5.Backend_MATE.mapper;
 
-import com.rookies5.Backend_MATE.dto.ApplicationDto;
 import com.rookies5.Backend_MATE.entity.Application;
 import com.rookies5.Backend_MATE.entity.Project;
 import com.rookies5.Backend_MATE.entity.User;

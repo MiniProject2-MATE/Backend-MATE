@@ -1,22 +1,20 @@
-package com.rookies5.Backend_MATE.dto;
+package com.rookies5.Backend_MATE.dto.request;
 
 import com.rookies5.Backend_MATE.entity.enums.Category;
 import com.rookies5.Backend_MATE.entity.enums.OnOffline;
-import com.rookies5.Backend_MATE.entity.enums.ProjectStatus;
+import jakarta.validation.constraints.FutureOrPresent;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.*;
-
+import lombok.Getter;
+import lombok.Setter;
 import java.time.LocalDate;
 
 @Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ProjectDto {
-    private Long id;
-    
-    private Long ownerId; // 연관관계: 방장(User)의 ID
+@Setter
+public class ProjectRequestDto {
+    @NotNull(message = "방장 ID는 필수입니다.")
+    private Long ownerId;
 
     @NotNull(message = "카테고리는 필수입니다.")
     private Category category;
@@ -28,15 +26,13 @@ public class ProjectDto {
     private String content;
 
     @NotNull(message = "모집 인원은 필수입니다.")
+    @Min(value = 2, message = "모집 인원은 최소 2명 이상이어야 합니다.")
     private Integer recruitCount;
-
-    private Integer currentCount; // 매퍼에서 기본값 0 처리
-    
-    private ProjectStatus status; // 매퍼에서 기본값 RECRUITING 처리
 
     @NotNull(message = "진행 방식은 필수입니다.")
     private OnOffline onOffline;
 
     @NotNull(message = "마감일은 필수입니다.")
+    @FutureOrPresent(message = "마감일은 오늘 이후여야 합니다.")
     private LocalDate endDate;
 }

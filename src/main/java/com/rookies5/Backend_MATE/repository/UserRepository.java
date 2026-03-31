@@ -10,9 +10,6 @@ import java.util.Optional;
 // JpaRepository<조종할 Entity 클래스, 그 Entity의 PK 데이터 타입>
 public interface UserRepository extends JpaRepository<User, Long> {
 
-    boolean existsByEmail(@NotBlank(message = "이메일은 필수입니다.")
-                          @Email(message = "이메일 형식이 올바르지 않습니다.") String email);
-
     Optional<User> findByEmail(String email);
 
     // 4.1.6 전화번호 중복 확인

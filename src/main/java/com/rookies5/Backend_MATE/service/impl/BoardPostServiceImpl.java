@@ -1,6 +1,5 @@
 package com.rookies5.Backend_MATE.service.impl;
 
-import com.rookies5.Backend_MATE.dto.BoardPostDto;
 import com.rookies5.Backend_MATE.entity.*;
 import com.rookies5.Backend_MATE.mapper.BoardPostMapper;
 import com.rookies5.Backend_MATE.repository.*;

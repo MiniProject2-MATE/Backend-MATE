@@ -1,6 +1,5 @@
 package com.rookies5.Backend_MATE.mapper;
 
-import com.rookies5.Backend_MATE.dto.UserDto;
 import com.rookies5.Backend_MATE.entity.User;
 import org.springframework.util.StringUtils;
 

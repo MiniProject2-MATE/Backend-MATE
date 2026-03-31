@@ -1,6 +1,5 @@
 package com.rookies5.Backend_MATE.service.impl;
 
-import com.rookies5.Backend_MATE.dto.CommentDto;
 import com.rookies5.Backend_MATE.entity.BoardPost;
 import com.rookies5.Backend_MATE.entity.Comment;
 import com.rookies5.Backend_MATE.entity.User;

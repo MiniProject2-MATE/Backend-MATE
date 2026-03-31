@@ -1,6 +1,5 @@
 package com.rookies5.Backend_MATE.service.impl;
 
-import com.rookies5.Backend_MATE.dto.ApplicationDto;
 import com.rookies5.Backend_MATE.entity.*;
 import com.rookies5.Backend_MATE.mapper.ApplicationMapper;
 import com.rookies5.Backend_MATE.repository.*;

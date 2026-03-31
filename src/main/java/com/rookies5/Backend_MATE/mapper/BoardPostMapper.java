@@ -1,6 +1,5 @@
 package com.rookies5.Backend_MATE.mapper;
 
-import com.rookies5.Backend_MATE.dto.BoardPostDto;
 import com.rookies5.Backend_MATE.entity.BoardPost;
 import com.rookies5.Backend_MATE.entity.Project;
 import com.rookies5.Backend_MATE.entity.User;
