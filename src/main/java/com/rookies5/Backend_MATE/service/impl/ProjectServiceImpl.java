@@ -1,5 +1,7 @@
 package com.rookies5.Backend_MATE.service.impl;
 
+import com.rookies5.Backend_MATE.dto.request.ProjectRequestDto;
+import com.rookies5.Backend_MATE.dto.response.ProjectResponseDto;
 import com.rookies5.Backend_MATE.entity.Project;
 import com.rookies5.Backend_MATE.entity.User;
 import com.rookies5.Backend_MATE.mapper.ProjectMapper;
@@ -11,77 +13,86 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class ProjectServiceImpl implements ProjectService {
-    
+
     private final ProjectRepository projectRepository;
-    private final UserRepository userRepository; // 방장 정보를 찾기 위해 추가
+    private final UserRepository userRepository;
 
-    // 1. 생성 로직
+    /**
+     * 1. 프로젝트 생성
+     */
     @Override
-    public ProjectDto createProject(ProjectDto projectDto) {
-        // 1. 방장(User) 엔티티 먼저 찾기 (Department와 달리 연관관계가 있어서 필요합니다)
-        User owner = userRepository.findById(projectDto.getOwnerId())
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + projectDto.getOwnerId()));
+    public ProjectResponseDto createProject(ProjectRequestDto requestDto) {
+        // 방장(User) 엔티티 존재 여부 확인
+        User owner = userRepository.findById(requestDto.getOwnerId())
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + requestDto.getOwnerId()));
 
-        // 2. DTO => Entity 변환 (Static 매퍼 사용!)
-        Project project = ProjectMapper.mapToProject(projectDto, owner);
-        
-        // 3. 등록 처리
+        // DTO -> Entity 변환 (Static 매퍼 사용)
+        Project project = ProjectMapper.mapToEntity(requestDto, owner);
+
+        // 저장 처리
         Project savedProject = projectRepository.save(project);
-        
-        // 4. 등록된 Entity => DTO 변환 후 리턴
-        return ProjectMapper.mapToProjectDto(savedProject);
+
+        // Entity -> Response DTO 변환 후 리턴 (이때 D-Day와 닉네임이 계산되어 들어감)
+        return ProjectMapper.mapToResponse(savedProject);
     }
 
-    // 2. 단건 조회 로직
+    /**
+     * 2. 단건 조회 (상세 보기)
+     */
     @Transactional(readOnly = true)
     @Override
-    public ProjectDto getProjectById(Long projectId) {
-        return projectRepository.findById(projectId) // Optional<Project>
-                .map(ProjectMapper::mapToProjectDto) // Optional<ProjectDto>
-                .orElseThrow(() -> new RuntimeException("Project is not exists with a given id: " + projectId));
+    public ProjectResponseDto getProjectById(Long projectId) {
+        return projectRepository.findById(projectId)
+                .map(ProjectMapper::mapToResponse)
+                .orElseThrow(() -> new RuntimeException("Project does not exist with id: " + projectId));
     }
 
-    // 3. 전체 목록 조회 로직
+    /**
+     * 3. 전체 목록 조회
+     */
     @Transactional(readOnly = true)
     @Override
-    public List<ProjectDto> getAllProjects() {
-        List<Project> projects = projectRepository.findAll();
-        
-        return projects.stream() // Stream<Project>
-                .map(ProjectMapper::mapToProjectDto) // Stream<ProjectDto>
-                .toList(); // List<ProjectDto>
+    public List<ProjectResponseDto> getAllProjects() {
+        return projectRepository.findAll().stream()
+                .map(ProjectMapper::mapToResponse)
+                .collect(Collectors.toList());
     }
 
-    // 4. 수정 로직
+    /**
+     * 4. 수정 로직
+     */
     @Override
-    public ProjectDto updateProject(Long projectId, ProjectDto updatedProject) {
+    public ProjectResponseDto updateProject(Long projectId, ProjectRequestDto requestDto) {
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new RuntimeException("Project is not exists with a given id: " + projectId));
-        
-        // Dirty Checking (Setter 또는 엔티티 내부 메서드 호출)
+                .orElseThrow(() -> new RuntimeException("Project does not exist with id: " + projectId));
+
+        // Dirty Checking: 엔티티 내부 메서드 호출하여 정보 업데이트
         project.updateProject(
-                updatedProject.getTitle(),
-                updatedProject.getContent(),
-                updatedProject.getRecruitCount(),
-                updatedProject.getEndDate(),
-                updatedProject.getOnOffline() // 진행 방식도 DTO에 있다면 같이 넣어주세요!
+                requestDto.getTitle(),
+                requestDto.getContent(),
+                requestDto.getRecruitCount(),
+                requestDto.getEndDate(),
+                requestDto.getOnOffline()
         );
 
-        // Entity => DTO 로 변환
-        return ProjectMapper.mapToProjectDto(project);
+        // 변경된 내용을 다시 Response DTO로 변환하여 리턴
+        return ProjectMapper.mapToResponse(project);
     }
 
-    // 5. 삭제 로직
+    /**
+     * 5. 삭제 로직
+     */
     @Override
     public void deleteProject(Long projectId) {
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new RuntimeException("Project is not exists with a given id: " + projectId));
-        
+                .orElseThrow(() -> new RuntimeException("Project does not exist with id: " + projectId));
+
         projectRepository.delete(project);
     }
 }

@@ -1,16 +1,17 @@
 package com.rookies5.Backend_MATE.mapper;
 
+import com.rookies5.Backend_MATE.dto.request.UserRequestDto;
+import com.rookies5.Backend_MATE.dto.response.UserResponseDto;
 import com.rookies5.Backend_MATE.entity.User;
 import org.springframework.util.StringUtils;
 
 public class UserMapper {
 
-    // Entity -> DTO 변환 (프론트엔드로 정보 줄 때)
-    public static UserDto mapToUserDto(User user) {
-        return UserDto.builder()
-                .id(user.getId())
+    // 1. Entity -> Response DTO (프론트엔드 응답용)
+    public static UserResponseDto mapToUserResponse(User user) {
+        return UserResponseDto.builder()
+                .id(user.getId()) // 엔티티의 PK 필드명에 맞춰 수정 (userId)
                 .email(user.getEmail())
-                .password(null) // ⚠️ 보안: 프론트로 비밀번호를 절대 보내지 않음!
                 .nickname(user.getNickname())
                 .phoneNumber(user.getPhoneNumber())
                 .position(user.getPosition())
@@ -19,23 +20,27 @@ public class UserMapper {
                 .build();
     }
 
-    // DTO -> Entity 변환 (회원가입 등으로 DB에 저장할 때)
-    public static User mapToUser(UserDto userDto) {
-        
-        // 닉네임이 비어있으면 이메일 앞부분 추출 (설계서 규칙 반영)
-        String finalNickname = StringUtils.hasText(userDto.getNickname()) 
-                ? userDto.getNickname() 
-                : userDto.getEmail().split("@")[0];
+    // 2. Request DTO -> Entity (회원가입/DB 저장용)
+    public static User mapToUser(UserRequestDto requestDto) {
+
+        // 닉네임 자동 추출
+        String finalNickname = StringUtils.hasText(requestDto.getNickname())
+                ? requestDto.getNickname()
+                : requestDto.getEmail().split("@")[0];
+
+        // 기본 프로필 이미지 설정
+        String finalProfileImg = StringUtils.hasText(requestDto.getProfileImg())
+                ? requestDto.getProfileImg()
+                : "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
 
         return User.builder()
-                .email(userDto.getEmail())
-                .password(userDto.getPassword()) // 실제 암호화는 Service에서 진행
+                .email(requestDto.getEmail())
+                .password(requestDto.getPassword()) // 💡 암호화는 나중에 Service에서!
                 .nickname(finalNickname)
-                .phoneNumber(userDto.getPhoneNumber())
-                .position(userDto.getPosition())
-                .techStacks(userDto.getTechStacks())
-                // 프로필 이미지가 안 들어오면 기본 이미지 설정
-                .profileImg(userDto.getProfileImg() != null ? userDto.getProfileImg() : "https://mate-s3.com/default-profile.png")
+                .phoneNumber(requestDto.getPhoneNumber())
+                .position(requestDto.getPosition())
+                .techStacks(requestDto.getTechStacks())
+                .profileImg(finalProfileImg)
                 .build();
     }
 }
