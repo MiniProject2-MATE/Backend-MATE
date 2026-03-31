@@ -47,4 +47,14 @@ public interface UserService {
      * @return 중복 여부 (true: 중복됨, false: 사용 가능)
      */
     boolean checkNicknameDuplicate(String nickname);
+
+    /**
+     * 7. 아이디(이메일) 찾기
+     */
+    String findEmailByPhoneNumber(String phoneNumber);
+
+    /**
+     * 8. 비밀번호 재설정 (임시 비밀번호 반환)
+     */
+    String resetPassword(String email, String phoneNumber);
 }

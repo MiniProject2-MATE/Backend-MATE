@@ -9,4 +9,6 @@ import java.util.List;
 public interface ApplicationRepository extends JpaRepository<Application, Long> {
     // 프로젝트 ID로 지원서 목록 찾기
     List<Application> findAllByProjectId(Long projectId);
+
+    boolean existsByProjectIdAndApplicantId(Long projectId, Long applicantId);
 }

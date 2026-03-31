@@ -40,4 +40,11 @@ public interface ProjectService {
      * @param projectId 삭제할 프로젝트 ID
      */
     void deleteProject(Long projectId);
+
+    /**
+     * 프로젝트 모집 수동 마감
+     * @param projectId 마감할 프로젝트 ID
+     * @return 마감된 프로젝트 정보
+     */
+    ProjectResponseDto closeProjectRecruitment(Long projectId);
 }

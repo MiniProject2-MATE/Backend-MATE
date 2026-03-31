@@ -72,6 +72,18 @@ public class Project extends BaseEntity {
         }
     }
 
+    // 모집 수동 마감
+    public void closeRecruitment() {
+        this.status = ProjectStatus.CLOSED;
+    }
+
+    // 인원수 감소 로직 추가
+    public void decreaseCurrentCount() {
+        if (this.currentCount > 0) {
+            this.currentCount--;
+        }
+    }
+
     public void updateProject(String title, String content, Integer recruitCount, java.time.LocalDate endDate, com.rookies5.Backend_MATE.entity.enums.OnOffline onOffline) {
         if (title != null) this.title = title;
         if (content != null) this.content = content;
