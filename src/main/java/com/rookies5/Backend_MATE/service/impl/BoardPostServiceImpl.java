@@ -7,7 +7,7 @@ import com.rookies5.Backend_MATE.entity.Project;
 import com.rookies5.Backend_MATE.entity.User;
 import com.rookies5.Backend_MATE.exception.EntityNotFoundException;
 import com.rookies5.Backend_MATE.exception.ErrorCode;
-import com.rookies5.Backend_MATE.exception.BusinessException;
+
 import com.rookies5.Backend_MATE.mapper.BoardPostMapper;
 import com.rookies5.Backend_MATE.repository.BoardPostRepository;
 import com.rookies5.Backend_MATE.repository.ProjectRepository;
@@ -16,6 +16,9 @@ import com.rookies5.Backend_MATE.service.BoardPostService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.rookies5.Backend_MATE.repository.ProjectMemberRepository;
+import com.rookies5.Backend_MATE.exception.AccessDeniedException;
+import com.rookies5.Backend_MATE.exception.InvalidRequestException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,6 +31,7 @@ public class BoardPostServiceImpl implements BoardPostService {
     private final BoardPostRepository boardPostRepository;
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
+    private final ProjectMemberRepository projectMemberRepository; // 추가: 권한 검증용
 
     /**
      * 새로운 게시글 작성
@@ -96,5 +100,32 @@ public class BoardPostServiceImpl implements BoardPostService {
         // }
 
         boardPostRepository.delete(post);
+    }
+    /**
+     * 게시글 상세 조회 (권한 검증 및 조회수 증가 로직 포함)
+     */
+    @Override
+    public BoardPostResponseDto getPostDetail(Long projectId, Long postId, Long userId) {
+        // 1. 게시글 존재 여부 확인
+        BoardPost post = boardPostRepository.findById(postId)
+                .orElseThrow(() -> new EntityNotFoundException(ErrorCode.BOARD_NOT_FOUND, postId));
+
+        // 2. 해당 게시글이 요청한 프로젝트에 속하는지 검증
+        if (!post.getProject().getId().equals(projectId)) {
+            throw new InvalidRequestException(ErrorCode.VALIDATION_ERROR, "해당 프로젝트의 게시글이 아닙니다.");
+        }
+
+        // 3. 권한 검증: 해당 프로젝트의 팀원(MEMBER, OWNER)인지 확인
+        boolean isMember = projectMemberRepository.existsByProjectIdAndUserId(projectId, userId);
+        if (!isMember) {
+            throw new AccessDeniedException(ErrorCode.AUTH_ACCESS_DENIED, "프로젝트 팀원만 게시글을 조회할 수 있습니다.");
+        }
+
+        // 4. 조회수 증가 로직
+        // (무한 새로고침 방지는 추후 Redis/Cookie로 고도화 가능, 현재는 단순 1 증가)
+        post.incrementViewCount();
+
+        // 5. DTO 변환 후 반환 (기존 BoardPostMapper.mapToResponse 그대로 활용)
+        return BoardPostMapper.mapToResponse(post);
     }
 }

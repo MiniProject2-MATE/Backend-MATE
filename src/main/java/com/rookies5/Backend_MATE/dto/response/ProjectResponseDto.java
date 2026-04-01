@@ -12,17 +12,21 @@ import java.time.LocalDate;
 public class ProjectResponseDto {
     private Long id;
     private Long ownerId;
-    private String ownerNickname; // 방장 이름
-    
+    private String ownerNickname;
+
     private Category category;
     private String title;
     private String content;
-    
+
     private Integer recruitCount;
     private Integer currentCount;
     private ProjectStatus status;
     private OnOffline onOffline;
-    
+
     private LocalDate endDate;
-    private Long remainingDays; // 마감까지 남은 일수 (D-Day 계산용)
+    private Long remainingDays;
+
+    // --- 활동 이력 구분을 위해 추가된 필드 ---
+    private boolean isOwner;      // 내가 방장인지 여부 (프론트 버튼 제어용)
+    private String role;          // 나의 역할 ("OWNER" 또는 "MEMBER")
 }

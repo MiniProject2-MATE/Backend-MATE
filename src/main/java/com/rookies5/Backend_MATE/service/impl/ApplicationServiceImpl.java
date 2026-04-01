@@ -59,7 +59,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         Application application = ApplicationMapper.mapToEntity(requestDto, project, applicant);
         Application savedApplication = applicationRepository.save(application);
 
-        return ApplicationMapper.mapToResponse(savedApplication);
+        return ApplicationMapper.mapToApplicationResponse(savedApplication);
     }
 
     /**
@@ -74,7 +74,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         }
 
         return applicationRepository.findAllByProjectId(projectId).stream()
-                .map(ApplicationMapper::mapToResponse)
+                .map(ApplicationMapper::mapToApplicationResponse)
                 .collect(Collectors.toList());
     }
 
@@ -89,9 +89,20 @@ public class ApplicationServiceImpl implements ApplicationService {
 
         // 이미 승인/거절 처리된 지원서는 취소 불가 로직 (ErrorCode.APPLY_CANNOT_CANCEL 활용)
         if (application.getStatus() != ApplicationStatus.PENDING) {
-             throw new BusinessException(ErrorCode.APPLY_CANNOT_CANCEL);
+            throw new BusinessException(ErrorCode.APPLY_CANNOT_CANCEL);
         }
 
         applicationRepository.delete(application);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ApplicationResponseDto> getMyPendingApplications(Long userId) {
+        // 1. 내가 신청했고, 상태가 ACCEPTED가 아닌(Not) 것들을 조회 (PENDING, REJECTED)
+        return applicationRepository.findAllByApplicantIdAndStatusNot(userId, ApplicationStatus.ACCEPTED)
+                .stream()
+                // 2. ApplicationResponseDto로 변환 (매퍼에서 projectTitle 포함됨)
+                .map(ApplicationMapper::mapToApplicationResponse)
+                .collect(Collectors.toList());
     }
 }

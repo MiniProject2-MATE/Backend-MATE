@@ -9,4 +9,6 @@ import java.util.List;
 public interface ProjectMemberRepository extends JpaRepository<ProjectMember, Long> {
     // 프로젝트 ID로 팀원 목록 찾기
     List<ProjectMember> findAllByProjectId(Long projectId);
+
+    boolean existsByProjectIdAndUserId(Long projectId, Long userId);
 }
