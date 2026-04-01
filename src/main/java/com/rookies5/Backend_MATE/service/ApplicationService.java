@@ -2,6 +2,7 @@ package com.rookies5.Backend_MATE.service;
 
 import com.rookies5.Backend_MATE.dto.request.ApplicationRequestDto;
 import com.rookies5.Backend_MATE.dto.response.ApplicationResponseDto;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -28,4 +29,5 @@ public interface ApplicationService {
     void deleteApplication(Long applicationId);
 
     List<ApplicationResponseDto> getMyPendingApplications(Long userId); // 내 신청 현황
+
 }

@@ -15,5 +15,5 @@ public interface AuthService {
 
     // 3. 찾기 기능들
     String findEmailByPhoneNumber(String phoneNumber);
-    void resetPassword(String email, String phoneNumber);
+    String resetPassword(String email, String phoneNumber);
 }

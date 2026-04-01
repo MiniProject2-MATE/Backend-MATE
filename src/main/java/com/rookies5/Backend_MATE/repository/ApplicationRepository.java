@@ -13,9 +13,6 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
 
     boolean existsByProjectIdAndApplicantId(Long projectId, Long applicantId);
 
-    // 지원자(Applicant)의 ID로 지원 내역을 찾는 메서드 정의
-    List<Application> findAllByUserId(Long applicantId);
-
     // 내 프로젝트/스터디 조회: 내가 신청했고, 상태가 ACCEPTED인 것만
     List<Application> findAllByApplicantIdAndStatus(Long applicantId, ApplicationStatus status);
 

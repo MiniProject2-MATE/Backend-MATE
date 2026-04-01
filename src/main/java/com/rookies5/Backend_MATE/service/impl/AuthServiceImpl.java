@@ -105,19 +105,23 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
-     * 6. 비밀번호 찾기 (임시 비밀번호 발급)
-     * @param email 가입 이메일
-     * @param phoneNumber 등록된 전화번호
+     * 6. 비밀번호 찾기 (임시 비밀번호 발급 및 반환)
      */
     @Override
-    public void resetPassword(String email, String phoneNumber) {
+    @Transactional // DB 반영을 위해 트랜잭션 추가
+    public String resetPassword(String email, String phoneNumber) {
+        // 1. 유저 존재 여부 확인
         User user = userRepository.findByEmailAndPhoneNumber(email, phoneNumber)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_MATCHED));
 
+        // 2. 기존에 만드신 유틸 메서드로 비밀번호 생성
         String tempPassword = generateTempPassword();
 
-        // TODO: Spring Security 적용 시 PasswordEncoder.encode(tempPassword) 필수
+        // 3. 비밀번호 업데이트 (나중에 Security 적용 시 인코딩 추가 필수!)
         user.updatePassword(tempPassword);
+
+        // 4. 생성된 비밀번호를 컨트롤러로 전달
+        return tempPassword;
     }
 
     /**
