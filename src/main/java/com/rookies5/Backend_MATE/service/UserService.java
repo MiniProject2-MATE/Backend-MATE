@@ -1,60 +1,64 @@
 package com.rookies5.Backend_MATE.service;
 
 import com.rookies5.Backend_MATE.dto.request.UserRequestDto;
+import com.rookies5.Backend_MATE.dto.response.ApplicationResponseDto;
+import com.rookies5.Backend_MATE.dto.response.ProjectResponseDto;
 import com.rookies5.Backend_MATE.dto.response.UserResponseDto;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 public interface UserService {
 
     /**
-     * 새로운 사용자(회원) 생성
-     * @param requestDto 회원가입 정보 (이메일, 비밀번호, 닉네임 등)
-     * @return 생성된 사용자 정보 (비밀번호 제외)
-     */
-    UserResponseDto createUser(UserRequestDto requestDto);
-
-    /**
-     * 특정 사용자 상세 정보 조회
-     * @param userId 조회할 사용자 ID
-     * @return 사용자 프로필 데이터
+     * 1. 특정 사용자 상세 정보 조회 (내 정보 조회 /api/users/me)
      */
     UserResponseDto getUserById(Long userId);
 
     /**
-     * 전체 사용자 목록 조회 (관리자용 또는 매칭 추천용)
-     * @return 전체 사용자 리스트
+     * 2. 전체 사용자 목록 조회 (관리자용)
      */
     List<UserResponseDto> getAllUsers();
 
     /**
-     * 사용자 프로필 정보 수정
-     * @param userId 수정할 사용자 ID
-     * @param requestDto 수정할 내용 (닉네임, 포지션, 기술 스택 등)
-     * @return 수정 완료된 사용자 정보
+     * 3. 사용자 프로필 정보 수정 (닉네임, 포지션, 기술 스택 등)
      */
     UserResponseDto updateUser(Long userId, UserRequestDto requestDto);
 
     /**
-     * 회원 탈퇴 (사용자 삭제)
-     * @param userId 삭제할 사용자 ID
+     * 4. 회원 탈퇴 (Soft Delete 방식)
      */
     void deleteUser(Long userId);
 
     /**
-     * 닉네임 중복 체크
-     * @param nickname 검사할 닉네임
-     * @return 중복 여부 (true: 중복됨, false: 사용 가능)
+     * 5. 닉네임 중복 체크 (수정 시 실시간 검증용)
      */
     boolean checkNicknameDuplicate(String nickname);
 
     /**
-     * 7. 아이디(이메일) 찾기
+     * 6. 전화번호 중복 체크 (검증 필요 시 사용)
      */
-    String findEmailByPhoneNumber(String phoneNumber);
+    boolean checkPhoneDuplicate(String phoneNumber);
 
     /**
-     * 8. 비밀번호 재설정 (임시 비밀번호 반환)
+     * 7. 프로필 이미지 단독 수정
      */
-    String resetPassword(String email, String phoneNumber);
+    String updateProfileImage(Long userId, MultipartFile profileImage);
+
+    /**
+     * 8. 프로필 이미지 삭제 (기본 이미지로 초기화)
+     */
+    void deleteProfileImage(Long userId);
+
+    /**
+     * 9. 내가 작성한 모집글 목록 조회 (명세서 4.5.3)
+     * @return ProjectResponseDto 리스트
+     */
+    List<ProjectResponseDto> getMyPosts(Long userId);
+
+    /**
+     * 10. 나의 프로젝트 지원 내역 조회 (명세서 4.5.3)
+     * @return ApplicationResponseDto 리스트
+     */
+    List<ApplicationResponseDto> getMyApplications(Long userId);
 }

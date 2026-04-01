@@ -11,4 +11,8 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     List<Application> findAllByProjectId(Long projectId);
 
     boolean existsByProjectIdAndApplicantId(Long projectId, Long applicantId);
+
+    // 지원자(Applicant)의 ID로 지원 내역을 찾는 메서드 정의
+    List<Application> findAllByUserId(Long applicantId);
+
 }

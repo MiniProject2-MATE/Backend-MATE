@@ -6,6 +6,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
 import org.hibernate.annotations.Where;
+
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Entity
@@ -62,6 +64,11 @@ public class User extends BaseEntity {
 
     public void updatePassword(String encodedPassword) {
         this.password = encodedPassword;
+    }
+
+    // 프로필 이미지 업데이트 (이미지 단독 수정/삭제 시 사용)
+    public void updateProfileImg(String profileImg) {
+        this.profileImg = profileImg;
     }
 
     public void updateProfile(String nickname, com.rookies5.Backend_MATE.entity.enums.Position position, java.util.Set<String> techStacks, String profileImg, String phoneNumber) {

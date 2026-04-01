@@ -39,7 +39,7 @@ public class ProjectMapper {
                 .title(requestDto.getTitle())
                 .content(requestDto.getContent())
                 .recruitCount(requestDto.getRecruitCount())
-                // 💡 방장 본인이 첫 번째 멤버이므로 보통 1로 시작하거나, 팀 규칙에 따라 0 세팅
+                // 방장 본인이 첫 번째 멤버이므로 보통 1로 시작하거나, 팀 규칙에 따라 0 세팅
                 .currentCount(1)
                 .status(ProjectStatus.RECRUITING) // 기본 상태: 모집 중
                 .onOffline(requestDto.getOnOffline())
