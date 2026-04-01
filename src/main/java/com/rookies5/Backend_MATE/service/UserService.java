@@ -51,14 +51,17 @@ public interface UserService {
     void deleteProfileImage(Long userId);
 
     /**
-     * 9. 내가 작성한 모집글 목록 조회 (명세서 4.5.3)
-     * @return ProjectResponseDto 리스트
+     * 9. 내가 작성한 모집글 조회 (내가 방장인 것)
      */
-    List<ProjectResponseDto> getMyPosts(Long userId);
+    List<ProjectResponseDto> getMyOwnedPosts(Long userId);
 
     /**
-     * 10. 나의 프로젝트 지원 내역 조회 (명세서 4.5.3)
-     * @return ApplicationResponseDto 리스트
+     * 10. 참여 중인 프로젝트/스터디 조회 (승인된 것)
      */
-    List<ApplicationResponseDto> getMyApplications(Long userId);
+    List<ProjectResponseDto> getMyJoinedProjects(Long userId);
+
+    /**
+     * 11. 내 신청 현황 조회 (대기/거절 상태인 것)
+     */
+    List<ApplicationResponseDto> getMyPendingApplications(Long userId);
 }

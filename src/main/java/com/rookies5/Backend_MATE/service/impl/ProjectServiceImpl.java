@@ -4,11 +4,13 @@ import com.rookies5.Backend_MATE.dto.request.ProjectRequestDto;
 import com.rookies5.Backend_MATE.dto.response.ProjectResponseDto;
 import com.rookies5.Backend_MATE.entity.Project;
 import com.rookies5.Backend_MATE.entity.User;
+import com.rookies5.Backend_MATE.entity.enums.ApplicationStatus;
 import com.rookies5.Backend_MATE.entity.enums.ProjectStatus;
 import com.rookies5.Backend_MATE.exception.BusinessException;
 import com.rookies5.Backend_MATE.exception.EntityNotFoundException;
 import com.rookies5.Backend_MATE.exception.ErrorCode;
 import com.rookies5.Backend_MATE.mapper.ProjectMapper;
+import com.rookies5.Backend_MATE.repository.ApplicationRepository;
 import com.rookies5.Backend_MATE.repository.ProjectRepository;
 import com.rookies5.Backend_MATE.repository.UserRepository;
 import com.rookies5.Backend_MATE.service.ProjectService;
@@ -26,6 +28,7 @@ public class ProjectServiceImpl implements ProjectService {
 
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
+    private final ApplicationRepository applicationRepository;
 
     /**
      * 1. 프로젝트 생성
@@ -142,5 +145,26 @@ public class ProjectServiceImpl implements ProjectService {
         project.closeRecruitment();
 
         return ProjectMapper.mapToResponse(project);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProjectResponseDto> getMyOwnedPosts(Long userId) {
+        // 1. 내가 owner_id인 프로젝트들을 레포지토리에서 가져옴
+        return projectRepository.findAllByOwnerId(userId).stream()
+                // 2. 매퍼를 통해 DTO로 변환 (isOwner=true 로직 포함)
+                .map(project -> ProjectMapper.mapToResponse(project, userId))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProjectResponseDto> getMyJoinedProjects(Long userId) {
+        // 1. Application 테이블에서 내가 신청(applicant)했고 승인(ACCEPTED)된 내역 조회
+        return applicationRepository.findAllByApplicantIdAndStatus(userId, ApplicationStatus.ACCEPTED)
+                .stream()
+                // 2. 지원 내역에 연결된 'Project' 엔티티를 꺼내서 DTO로 변환
+                .map(app -> ProjectMapper.mapToResponse(app.getProject(), userId))
+                .collect(Collectors.toList());
     }
 }

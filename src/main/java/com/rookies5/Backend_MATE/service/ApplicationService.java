@@ -26,4 +26,6 @@ public interface ApplicationService {
      * @param applicationId 지원서 ID
      */
     void deleteApplication(Long applicationId);
+
+    List<ApplicationResponseDto> getMyPendingApplications(Long userId); // 내 신청 현황
 }

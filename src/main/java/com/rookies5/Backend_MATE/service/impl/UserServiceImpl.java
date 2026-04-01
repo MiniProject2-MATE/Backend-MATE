@@ -16,6 +16,8 @@ import com.rookies5.Backend_MATE.repository.ProjectRepository;
 import com.rookies5.Backend_MATE.repository.UserRepository;
 // import com.rookies5.Backend_MATE.repository.ProjectRepository;     // 나중에 추가 시 주석 해제
 // import com.rookies5.Backend_MATE.repository.ApplicationRepository; // 나중에 추가 시 주석 해제
+import com.rookies5.Backend_MATE.service.ApplicationService;
+import com.rookies5.Backend_MATE.service.ProjectService;
 import com.rookies5.Backend_MATE.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,8 +33,8 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final ProjectRepository projectRepository;         // 의존성 주입 필요 시 주석 해제
-    private final ApplicationRepository applicationRepository; // 의존성 주입 필요 시 주석 해제
+    private final ProjectService projectService;
+    private final ApplicationService applicationService;
 
     private static final String DEFAULT_PROFILE_IMG = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
 
@@ -141,26 +143,32 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
-     * 9. 내가 작성한 모집글 목록 조회 (명세서 4.5.3)
+     * 9. 내가 작성한 모집글 조회 (내가 방장인 것 - 명세서 4.5.3-1)
      */
     @Transactional(readOnly = true)
     @Override
-    public List<ProjectResponseDto> getMyPosts(Long userId) {
-        // TODO: projectRepository 연동 시 아래 로직 사용
-        return projectRepository.findAllByOwnerId(userId).stream()
-                .map(ProjectMapper::mapToResponse)
-                .collect(Collectors.toList());
+    public List<ProjectResponseDto> getMyOwnedPosts(Long userId) {
+        // ProjectService에 위임하여 내가 방장인 글 목록을 가져옵니다.
+        return projectService.getMyOwnedPosts(userId);
     }
 
     /**
-     * 10. 나의 프로젝트 지원 내역 조회 (명세서 4.5.3)
+     * 10. 참여 중인 프로젝트/스터디 조회 (승인 완료 - 명세서 4.5.3-2)
      */
     @Transactional(readOnly = true)
     @Override
-    public List<ApplicationResponseDto> getMyApplications(Long userId) {
-        // TODO: applicationRepository 연동 시 아래 로직 사용
-        return applicationRepository.findAllByUserId(userId).stream()
-                .map(ApplicationMapper::mapToResponse)
-                .collect(Collectors.toList());
+    public List<ProjectResponseDto> getMyJoinedProjects(Long userId) {
+        // ProjectService에 위임하여 내가 멤버로 참여 중인 글 목록을 가져옵니다.
+        return projectService.getMyJoinedProjects(userId);
+    }
+
+    /**
+     * 11. 내 지원 현황 조회 (대기/거절 상태 - 명세서 4.5.3-3)
+     */
+    @Transactional(readOnly = true)
+    @Override
+    public List<ApplicationResponseDto> getMyPendingApplications(Long userId) {
+        // ApplicationService에 위임하여 승인 대기/거절 상태인 내역을 가져옵니다.
+        return applicationService.getMyPendingApplications(userId);
     }
 }
