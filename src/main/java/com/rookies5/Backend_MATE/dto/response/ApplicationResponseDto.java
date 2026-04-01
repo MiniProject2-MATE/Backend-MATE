@@ -3,21 +3,21 @@ package com.rookies5.Backend_MATE.dto.response;
 import com.rookies5.Backend_MATE.entity.enums.ApplicationStatus;
 import lombok.Builder;
 import lombok.Getter;
-
 import java.time.LocalDateTime;
 
 @Getter
 @Builder
 public class ApplicationResponseDto {
-    private Long id;
-    private Long projectId;
+    private Long id;            // 지원서 ID (application_id)
+    private Long projectId;     // 이동을 위한 원본 게시글 ID
+    private String projectTitle; // 리스트에 보여줄 게시글 제목 (추가!)
+
     private Long applicantId;
     private String message;
 
     private String applicantNickname;
     private String applicantPosition;
 
-    private ApplicationStatus status; // 여기서 상태값을 보여줍니다.
-
+    private ApplicationStatus status;
     private LocalDateTime createdAt;
 }

@@ -47,4 +47,7 @@ public interface ProjectService {
      * @return 마감된 프로젝트 정보
      */
     ProjectResponseDto closeProjectRecruitment(Long projectId);
+
+    List<ProjectResponseDto> getMyOwnedPosts(Long userId);      // (1) 내 모집글
+    List<ProjectResponseDto> getMyJoinedProjects(Long userId);   // (2) 참여 중인 프로젝트
 }

@@ -59,7 +59,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         Application application = ApplicationMapper.mapToEntity(requestDto, project, applicant);
         Application savedApplication = applicationRepository.save(application);
 
-        return ApplicationMapper.mapToResponse(savedApplication);
+        return ApplicationMapper.mapToApplicationResponse(savedApplication);
     }
 
     /**
@@ -74,7 +74,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         }
 
         return applicationRepository.findAllByProjectId(projectId).stream()
-                .map(ApplicationMapper::mapToResponse)
+                .map(ApplicationMapper::mapToApplicationResponse)
                 .collect(Collectors.toList());
     }
 
@@ -93,5 +93,16 @@ public class ApplicationServiceImpl implements ApplicationService {
         }
 
         applicationRepository.delete(application);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ApplicationResponseDto> getMyPendingApplications(Long userId) {
+        // 1. 내가 신청했고, 상태가 ACCEPTED가 아닌(Not) 것들을 조회 (PENDING, REJECTED)
+        return applicationRepository.findAllByApplicantIdAndStatusNot(userId, ApplicationStatus.ACCEPTED)
+                .stream()
+                // 2. ApplicationResponseDto로 변환 (매퍼에서 projectTitle 포함됨)
+                .map(ApplicationMapper::mapToApplicationResponse)
+                .collect(Collectors.toList());
     }
 }
