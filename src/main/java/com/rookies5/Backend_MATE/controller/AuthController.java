@@ -3,6 +3,7 @@ package com.rookies5.Backend_MATE.controller;
 import com.rookies5.Backend_MATE.dto.request.UserRequestDto;
 import com.rookies5.Backend_MATE.dto.response.UserResponseDto;
 import com.rookies5.Backend_MATE.service.AuthService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,7 +22,7 @@ public class AuthController {
      */
     @PostMapping("/signup")
     public ResponseEntity<UserResponseDto> signup(
-            @RequestPart("userData") UserRequestDto requestDto,
+            @Valid @RequestPart("userData") UserRequestDto requestDto,
             @RequestPart(value = "profileImage", required = false) MultipartFile profileImage) {
 
         return ResponseEntity.ok(authService.register(requestDto, profileImage));
