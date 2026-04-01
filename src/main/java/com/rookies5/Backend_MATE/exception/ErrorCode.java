@@ -34,7 +34,7 @@ public enum ErrorCode {
 
     // 지원서/매칭 관련 (40X, 422)
     APPLY_NOT_FOUND("APPLY_001", "지원서를 찾을 수 없습니다", HttpStatus.NOT_FOUND),
-    APPLY_DUPLICATE("APPLY_002", "이미 지원한 프로젝트입니다", HttpStatus.CONFLICT),
+    APPLY_DUPLICATE("APPLY_002", "이미 지원했다가 가입 거절된 프로젝트입니다", HttpStatus.CONFLICT),
     APPLY_CANNOT_CANCEL("APPLY_003", "이미 처리된 지원서는 취소할 수 없습니다", HttpStatus.UNPROCESSABLE_ENTITY),
 
     // 멤버십 및 게시판 관련 (40X)
