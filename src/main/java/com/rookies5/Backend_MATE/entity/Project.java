@@ -84,11 +84,17 @@ public class Project extends BaseEntity {
         }
     }
 
-    public void updateProject(String title, String content, Integer recruitCount, java.time.LocalDate endDate, com.rookies5.Backend_MATE.entity.enums.OnOffline onOffline) {
-        if (title != null) this.title = title;
-        if (content != null) this.content = content;
-        if (recruitCount != null) this.recruitCount = recruitCount;
-        if (endDate != null) this.endDate = endDate;
-        if (onOffline != null) this.onOffline = onOffline;
+    public void updateProject(String title, String content, Integer recruitCount,
+                              LocalDate endDate, OnOffline onOffline, ProjectStatus status) { // 👈 파라미터 추가
+        this.title = title;
+        this.content = content;
+        this.recruitCount = recruitCount;
+        this.endDate = endDate;
+        this.onOffline = onOffline;
+
+        // status가 null이 아닐 때만 업데이트 (지호 님의 의도 반영!)
+        if (status != null) {
+            this.status = status;
+        }
     }
 }

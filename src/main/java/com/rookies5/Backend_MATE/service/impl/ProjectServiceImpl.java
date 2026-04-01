@@ -91,7 +91,8 @@ public class ProjectServiceImpl implements ProjectService {
                 requestDto.getContent(),
                 requestDto.getRecruitCount(),
                 requestDto.getEndDate(),
-                requestDto.getOnOffline()
+                requestDto.getOnOffline(),
+                requestDto.getStatus()
         );
 
         return ProjectMapper.mapToResponse(project);
