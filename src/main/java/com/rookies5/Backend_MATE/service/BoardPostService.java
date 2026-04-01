@@ -34,4 +34,13 @@ public interface BoardPostService {
      * @param postId 삭제할 게시글 ID
      */
     void deletePost(Long postId);
+
+    /**
+     * 게시글 상세 조회 (조회수 증가 포함)
+     * @param projectId 프로젝트 ID
+     * @param postId 게시글 ID (DTO의 id와 매핑됨)
+     * @param userId 요청한 사용자 ID (권한 검증용)
+     * @return 게시글 상세 정보
+     */
+    BoardPostResponseDto getPostDetail(Long projectId, Long postId, Long userId);
 }
