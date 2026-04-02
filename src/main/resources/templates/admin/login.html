@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>관리자 로그인</title>
+
+    <style>
+        body {
+            margin:0;
+            font-family:Arial;
+            background:#f1f5f9;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            height:100vh;
+        }
+
+        .login-box {
+            background:white;
+            padding:40px;
+            border-radius:10px;
+            width:350px;
+            box-shadow:0 10px 30px rgba(0,0,0,0.1);
+            text-align:center;
+        }
+
+        .title {
+            font-size:20px;
+            font-weight:bold;
+            margin-bottom:20px;
+        }
+
+        input {
+            width:100%;
+            padding:10px;
+            margin-bottom:15px;
+            border-radius:5px;
+            border:1px solid #ddd;
+        }
+
+        button {
+            width:100%;
+            padding:10px;
+            background:#6366f1;
+            color:white;
+            border:none;
+            border-radius:5px;
+            cursor:pointer;
+        }
+
+        .error {
+            color:red;
+            margin-bottom:10px;
+        }
+
+        .logout {
+            color:green;
+            margin-bottom:10px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="login-box">
+    <div class="title">관리자 로그인</div>
+
+    <!-- 로그인 실패 -->
+    <div class="error" th:if="${param.error}">
+        아이디 또는 비밀번호가 잘못되었습니다.
+    </div>
+
+    <!-- 로그아웃 메시지 -->
+    <div class="logout" th:if="${param.logout}">
+        로그아웃되었습니다.
+    </div>
+
+    <form th:action="@{/admin/login}" method="post">
+        <input type="text" name="admin" placeholder="아이디 입력" required>
+        <input type="password" name="1234" placeholder="비밀번호 입력" required>
+
+        <button type="submit">로그인</button>
+    </form>
+</div>
+
+</body>
+</html>

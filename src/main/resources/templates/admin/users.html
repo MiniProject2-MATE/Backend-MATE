@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>회원 관리</title>
+    <style>
+        body { margin:0; font-family:Arial; background:#f1f5f9; }
+
+        .header { display:flex; justify-content:space-between; align-items:center; padding:15px 20px; background:#1e293b; color:white; }
+        .header-right { display:flex; gap:10px; align-items:center; }
+        .search-box {
+            display:flex;
+            align-items:center;
+            gap:5px;
+        }
+
+        .search-box input {
+            padding:6px 10px;
+            border-radius:5px;
+            border:none;
+        }
+
+        .search-box button {
+            padding:6px 10px;
+            border:none;
+            border-radius:5px;
+            background:#6366f1;
+            color:white;
+            cursor:pointer;
+        }
+
+        .container { display:flex; }
+        .sidebar { width:220px; background:#0f172a; color:white; padding:20px; height:100vh; }
+        .sidebar a { display:block; padding:10px; color:white; text-decoration:none; }
+        .sidebar a:hover { background:#1e293b; }
+
+        .main { flex:1; padding:20px; }
+        .card { background:white; padding:15px; border-radius:10px; text-align:center;}
+        .left {
+            display:flex;
+            gap:20px;
+            align-items:center;
+        }
+        table { width:100%; border-collapse:collapse; }
+        th, td { padding:10px; border-bottom:1px solid #ddd; text-align:center;}
+
+
+        .pagination { text-align:center; margin-top:10px; }
+        .pagination button { margin:2px; padding:5px 10px; }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+    <div class="left">
+        <div>mate ADMIN</div>
+        <div class="title">회원 관리</div>
+    </div>
+
+    <div class="header-right">
+        <!-- 🔍 검색창 -->
+        <form class="search-box" action="/admin/search" method="get">
+            <input type="text" name="keyword" placeholder="회원 검색...">
+            <button type="submit">🔍</button>
+        </form>
+
+        <div>👥</div>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- 사이드바 그대로 -->
+    <div class="sidebar">
+        <div>👤 관리자</div>
+        <div>Super Admin</div>
+        <a href="/admin/dashboard">📊 대시보드</a>
+        <a href="/admin/users">👥 회원관리</a>
+        <a href="/admin/projects">📋 게시글관리</a>
+        <a href="/admin/logs">📜 활동로그</a>
+
+        <div style="margin-top:50px;">
+            <a href="#">🚪 로그아웃</a>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="card">
+            <h3>회원 목록</h3>
+
+            <table>
+                <tr>
+                    <th>회원정보</th>
+                    <th>가입일</th>
+                    <th>관리</th>
+                </tr>
+
+                <tr th:each="u : ${users}">
+                    <td>
+                        <b th:text="${u.nickname}"></b><br>
+                        <small th:text="${u.email}"></small>
+                    </td>
+                    <td th:text="${u.createdAt}"></td>
+                    <td>
+                        <button class="btn-detail" th:attr="data-id=${u.id}">상세</button>
+                    </td>
+                </tr>
+            </table>
+
+            <div class="pagination">
+                <button>&lt;</button>
+                <button class="active">1</button>
+                <button>2</button>
+                <button>3</button>
+                <button>&gt;</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function toggleSearch(){
+        const box = document.getElementById("searchBox");
+        box.style.display = box.style.display === "block" ? "none" : "block";
+    }
+</script>
+<!-- USER DETAIL MODAL -->
+<div id="userDetailModal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+     background:white; padding:20px; border-radius:10px; box-shadow:0 0 15px rgba(0,0,0,0.3); z-index:1000; width:300px;">
+    <h3>회원 상세 정보</h3>
+    <div id="modalContent"></div>
+    <button onclick="closeModal()">닫기</button>
+</div>
+
+<div id="modalOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+     background:rgba(0,0,0,0.5); z-index:900;" onclick="closeModal()"></div>
+<script>
+    document.querySelectorAll('.btn-detail').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const userId = this.dataset.id;
+
+            fetch(`/admin/users/${userId}`)
+                .then(res => {
+                    if (!res.ok) throw new Error("회원 정보를 불러오는데 실패했습니다.");
+                    return res.json();
+                })
+                .then(user => {
+                    const content = `
+                        <p><strong>닉네임:</strong> ${user.nickname}</p>
+                        <p><strong>이메일:</strong> ${user.email}</p>
+                        <p><strong>전화번호:</strong> ${user.phoneNumber || '-'}</p>
+                        <p><strong>포지션:</strong> ${user.position || '-'}</p>
+                        <p><strong>가입일:</strong> ${new Date(user.createdAt).toLocaleString()}</p>
+                    `;
+                    document.getElementById('modalContent').innerHTML = content;
+                    openModal();
+                })
+                .catch(err => alert(err.message));
+        });
+    });
+
+        function openModal() {
+            document.getElementById('userDetailModal').style.display = 'block';
+            document.getElementById('modalOverlay').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('userDetailModal').style.display = 'none';
+            document.getElementById('modalOverlay').style.display = 'none';
+        }
+</script>
+</body>
+</html>
