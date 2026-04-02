@@ -1,7 +1,9 @@
 package com.rookies5.Backend_MATE.controller;
 
 import com.rookies5.Backend_MATE.common.SuccessResponse;
+import com.rookies5.Backend_MATE.dto.request.LoginRequestDto;
 import com.rookies5.Backend_MATE.dto.request.UserRequestDto;
+import com.rookies5.Backend_MATE.dto.response.AuthResponseDto;
 import com.rookies5.Backend_MATE.dto.response.UserResponseDto;
 import com.rookies5.Backend_MATE.service.AuthService;
 import jakarta.validation.Valid;
@@ -100,5 +102,18 @@ public class AuthController {
     public ResponseEntity<String> resetPassword(@RequestParam String email, @RequestParam String phoneNumber) {
         String newPassword = authService.resetPassword(email, phoneNumber);
         return ResponseEntity.ok(newPassword);
+    }
+
+    /**
+     * 7. 로그인 (JWT 토큰 발급)
+     */
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponseDto> login(@RequestBody @Valid LoginRequestDto requestDto) {
+        log.info("로그인 요청: {}", requestDto.getEmail());
+
+        // 서비스의 login 메서드를 호출해서 토큰이 담긴 AuthResponseDto를 받아옵니다.
+        AuthResponseDto responseDto = authService.login(requestDto.getEmail(), requestDto.getPassword());
+
+        return ResponseEntity.ok(responseDto);
     }
 }
