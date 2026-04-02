@@ -17,6 +17,7 @@ import com.rookies5.Backend_MATE.repository.CommentRepository;
 import com.rookies5.Backend_MATE.repository.ProjectMemberRepository;
 import com.rookies5.Backend_MATE.repository.ProjectRepository;
 import com.rookies5.Backend_MATE.repository.UserRepository;
+import com.rookies5.Backend_MATE.security.SecurityUtils; // [추가]
 import com.rookies5.Backend_MATE.service.ProjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -80,6 +81,12 @@ public class ProjectServiceImpl implements ProjectService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.PROJECT_NOT_FOUND, projectId));
 
+        // [추가] 요청한 사용자가 프로젝트 방장인지 권한 검증
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        if (!project.getOwner().getId().equals(currentUserId)) {
+            throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED);
+        }
+
         project.updateProject(
                 requestDto.getTitle(),
                 requestDto.getContent(),
@@ -101,6 +108,12 @@ public class ProjectServiceImpl implements ProjectService {
     public void deleteProject(Long projectId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.PROJECT_NOT_FOUND, projectId));
+
+        // [추가] 요청한 사용자가 프로젝트 방장인지 권한 검증
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        if (!project.getOwner().getId().equals(currentUserId)) {
+            throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED);
+        }
 
         // 1단계: 해당 프로젝트의 게시글에 달린 댓글 먼저 삭제
         List<BoardPost> boardPosts = boardPostRepository.findAllByProjectId(projectId);
@@ -130,6 +143,12 @@ public class ProjectServiceImpl implements ProjectService {
     public ProjectResponseDto closeProjectRecruitment(Long projectId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.PROJECT_NOT_FOUND, projectId));
+
+        // [추가] 요청한 사용자가 프로젝트 방장인지 권한 검증
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        if (!project.getOwner().getId().equals(currentUserId)) {
+            throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED);
+        }
 
         if (project.getStatus() == ProjectStatus.CLOSED) {
             throw new BusinessException(ErrorCode.PROJECT_CLOSED);

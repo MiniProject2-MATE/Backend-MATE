@@ -24,15 +24,18 @@ import java.util.stream.Collectors;
 public class JwtTokenProvider {
 
     private final SecretKey key;
-    
+    private final CustomUserDetailsService userDetailsService; // [추가] 유저 정보 로드용
+
     // API 명세서 규칙: 액세스 토큰 1시간, 리프레시 토큰 7일 설정
-    private final long accessTokenValidityTime = 60 * 60 * 1000L; 
+    private final long accessTokenValidityTime = 60 * 60 * 1000L;
     private final long refreshTokenValidityTime = 7 * 24 * 60 * 60 * 1000L;
 
     // application-dev.properties에 있는 비밀키를 가져와서 암호화 키로 변환
-    public JwtTokenProvider(@Value("${jwt.secret}") String secretKey) {
+    // [수정] CustomUserDetailsService 생성자 주입 추가
+    public JwtTokenProvider(@Value("${jwt.secret}") String secretKey, CustomUserDetailsService userDetailsService) {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         this.key = Keys.hmacShaKeyFor(keyBytes);
+        this.userDetailsService = userDetailsService; // [추가]
     }
 
     // 1. Access Token 생성 (1시간짜리)
@@ -67,14 +70,10 @@ public class JwtTokenProvider {
     public Authentication getAuthentication(String token) {
         Claims claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
 
-        Collection<? extends GrantedAuthority> authorities =
-                Arrays.stream(claims.get("auth").toString().split(","))
-                        .map(SimpleGrantedAuthority::new)
-                        .collect(Collectors.toList());
+        // [수정] DB에서 최신 유저 정보를 가져와서 CustomUserDetails로 포장
+        UserDetails principal = userDetailsService.loadUserByUsername(claims.getSubject());
 
-        // Spring Security가 알아들을 수 있는 UserDetails 객체로 포장해서 반환
-        UserDetails principal = new User(claims.getSubject(), "", authorities);
-        return new UsernamePasswordAuthenticationToken(principal, token, authorities);
+        return new UsernamePasswordAuthenticationToken(principal, token, principal.getAuthorities());
     }
 
     // 4. 토큰이 위조되지 않았는지, 만료되지 않았는지 검사하는 메서드

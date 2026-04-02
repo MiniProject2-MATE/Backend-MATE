@@ -13,30 +13,32 @@ public interface AuthService {
     UserResponseDto register(UserRequestDto requestDto, MultipartFile profileImage);
 
     /**
-     * 2. 이메일 중복 및 유효성 확인
+     * 2. 로그인
+     */
+    AuthResponseDto login(String email, String password);
+
+    /**
+     * 3. 이메일 중복 및 유효성 확인
      */
     boolean isEmailAvailable(String email);
 
     /**
-     * 3. 전화번호 중복 및 유효성 확인
+     * 4. 전화번호 중복 및 유효성 확인 (가입/수정 공용)
      */
     boolean isPhoneAvailable(String phoneNumber, Long userId);
 
     /**
-     * 4. 닉네임 중복 및 유효성 확인 (가입/수정 공용)
+     * 5. 닉네임 중복 및 유효성 확인 (가입/수정 공용)
      */
     boolean isNicknameAvailable(String nickname, Long userId);
 
     /**
-     * 5. 아이디(이메일) 찾기
+     * 6. 아이디(이메일) 찾기
      */
     String findEmailByPhoneNumber(String phoneNumber);
 
     /**
-    * 6. 비밀번호 재설정 (임시 비밀번호 발급)
-    */
+     * 7. 비밀번호 재설정 (임시 비밀번호 발급)
+     */
     String resetPassword(String email, String phoneNumber);
-
-    // 4. 로그인
-    AuthResponseDto login(String email, String password);
 }
