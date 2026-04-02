@@ -5,17 +5,34 @@ import com.rookies5.Backend_MATE.dto.response.UserResponseDto;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface AuthService {
-    // 1. 회원가입
+
+    /**
+     * 1. 회원가입
+     */
     UserResponseDto register(UserRequestDto requestDto, MultipartFile profileImage);
 
-    // 2. 중복 확인 기능들 (가입 전 필수!)
-    boolean checkEmailDuplicate(String email);
-    boolean checkNicknameDuplicate(String nickname);
-    boolean checkPhoneDuplicate(String phoneNumber);
+    /**
+     * 2. 이메일 중복 및 유효성 확인
+     */
+    boolean isEmailAvailable(String email);
 
-    // 3. 찾기 기능들
-    String findEmailByPhoneNumber(String phoneNumber);
-    String resetPassword(String email, String phoneNumber);
+    /**
+     * 3. 전화번호 중복 및 유효성 확인
+     */
+    boolean isPhoneAvailable(String phoneNumber, Long userId);
 
+    /**
+     * 4. 닉네임 중복 및 유효성 확인 (가입/수정 공용)
+     */
     boolean isNicknameAvailable(String nickname, Long userId);
+
+    /**
+     * 5. 아이디(이메일) 찾기
+     */
+    String findEmailByPhoneNumber(String phoneNumber);
+
+    /**
+     * 6. 비밀번호 재설정 (임시 비밀번호 발급)
+     */
+    String resetPassword(String email, String phoneNumber);
 }

@@ -30,4 +30,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // 4.1.10 비밀번호 찾기용 (이메일과 전화번호 동시 만족)
     Optional<User> findByEmailAndPhoneNumber(String email, String phoneNumber);
 
+    // 나(id)를 제외하고 해당 전화번호를 사용하는 사람이 있는지 확인 (마이페이지 수정용)
+    boolean existsByPhoneNumberAndIdNot(String phoneNumber, Long id);
+
 }

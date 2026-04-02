@@ -1,8 +1,8 @@
 -- [1] 유저 생성 (ID 1, 2, 3)
 INSERT INTO users (user_id, email, password, nickname, position, phone_number, created_at) VALUES
-(1, 'userbaek@mate.com', '$2a$10$dummy', '백승호', 'BE', '010-1111-1111', NOW()),
-(2, 'user1@mate.com', '$2a$10$dummy', '개발왕', 'FE', '010-2222-2222', NOW()),
-(3, 'user2@mate.com', '$2a$10$dummy', '스프링러너', 'BE', '010-3333-3333', NOW());
+(1, 'userbaek@mate.com', '$2a$10$dummy', '백승호', 'BE', '01011111111', NOW()),
+(2, 'user1@mate.com', '$2a$10$dummy', '개발왕', 'FE', '01022222222', NOW()),
+(3, 'user2@mate.com', '$2a$10$dummy', '스프링러너', 'BE', '01033333333', NOW());
 
 -- [2] 유저별 기술 스택 연계 (UserTechStack 테이블)
 INSERT INTO user_tech_stacks (user_id, tech_stack) VALUES

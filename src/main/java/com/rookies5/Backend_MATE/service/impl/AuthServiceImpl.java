@@ -22,73 +22,120 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
 
     /**
-     * 1. 신규 회원을 등록(회원가입)합니다.
-     * 명세서 규칙: 닉네임 미입력 시 자동 생성, 이미지 미첨부 시 기본 이미지 할당(Mapper 담당)
-     * @param requestDto 회원가입 폼 데이터
-     * @param profileImage 업로드된 프로필 이미지 파일 (선택)
-     * @return 생성된 사용자 정보
+     * 1. 신규 회원을 등록(회원가입)
      */
     @Override
     public UserResponseDto register(UserRequestDto requestDto, MultipartFile profileImage) {
-        // 이메일 중복 검증
-        if (checkEmailDuplicate(requestDto.getEmail())) {
-            throw new BusinessException(ErrorCode.USER_EMAIL_DUPLICATE);
-        }
-        // 전화번호 중복 검증
-        if (checkPhoneDuplicate(requestDto.getPhoneNumber())) {
-            throw new BusinessException(ErrorCode.USER_PHONE_DUPLICATE);
-        }
+        // [통합] 이메일 유효성 + 중복 한 번에 체크
+        isEmailAvailable(requestDto.getEmail());
 
-        // 이미지 파일이 있을 경우 DTO에 임시 URL 세팅 (실제 S3 연동 전)
+        // [통합] 전화번호 유효성 + 중복 한 번에 체크
+        isPhoneAvailable(requestDto.getPhoneNumber(), null);
+
+        // 이미지 처리 로직
         if (profileImage != null && !profileImage.isEmpty()) {
-            // TODO: S3 업로드 로직으로 교체 예정
             String profileImgUrl = "https://mate-s3.com/uploaded-" + profileImage.getOriginalFilename();
             requestDto.setProfileImg(profileImgUrl);
         }
 
-        // Mapper를 통해 Entity 변환 (여기서 닉네임 자동추출 및 기본 이미지 처리가 일어남)
+        // Entity 변환
         User user = UserMapper.mapToUser(requestDto);
 
-        // 변환된 최종 닉네임으로 중복 검증
-        if (checkNicknameDuplicate(user.getNickname())) {
-            throw new BusinessException(ErrorCode.USER_NICKNAME_DUPLICATE);
-        }
+        // [통합] 최종 확정된 닉네임 유효성 + 중복 체크 (가입 시엔 userId가 없으므로 null)
+        isNicknameAvailable(user.getNickname(), null);
 
         User savedUser = userRepository.save(user);
         return UserMapper.mapToUserResponse(savedUser);
     }
 
     /**
-     * 2. 이메일 중복 확인
-     * @param email 검사할 이메일
-     * @return 중복 여부 (true: 중복, false: 사용 가능)
+     * 2. 이메일 유효성 및 중복 확인
      */
     @Transactional(readOnly = true)
     @Override
-    public boolean checkEmailDuplicate(String email) {
-        return userRepository.findByEmail(email).isPresent();
+    public boolean isEmailAvailable(String email) {
+        String regex = "^[A-Za-z0-9+_.-]+@(.+)$";
+        if (email == null || !email.matches(regex)) {
+            throw new BusinessException(ErrorCode.INVALID_EMAIL_FORMAT);
+        }
+
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new BusinessException(ErrorCode.USER_EMAIL_DUPLICATE);
+        }
+        return true;
     }
 
     /**
-     * 3. 닉네임 중복 확인
-     * @param nickname 검사할 닉네임
-     * @return 중복 여부
+     * 4. 전화번호 가용성 체크 (형식 + 중복 + 본인제외)
      */
     @Transactional(readOnly = true)
     @Override
-    public boolean checkNicknameDuplicate(String nickname) {
-        return userRepository.existsByNickname(nickname);
+    public boolean isPhoneAvailable(String phoneNumber, Long userId) {
+        // 1. 형식 및 널 체크 (공백 제거 포함)
+        if (phoneNumber == null) {
+            throw new BusinessException(ErrorCode.INVALID_PHONE_FORMAT);
+        }
+
+        String targetPhone = phoneNumber.trim();
+
+        if (!targetPhone.matches("^\\d{11}$")) {
+            throw new BusinessException(ErrorCode.INVALID_PHONE_FORMAT);
+        }
+
+        // 2. 중복 체크 분기
+        boolean isDuplicate;
+        if (userId == null) {
+            // 회원가입 시: 전체 중복 체크
+            isDuplicate = userRepository.existsByPhoneNumber(targetPhone);
+        } else {
+            // 마이페이지 수정 시: 나(userId)를 제외하고 중복 체크
+            isDuplicate = userRepository.existsByPhoneNumberAndIdNot(targetPhone, userId);
+        }
+
+        // 3. 중복이면 에러 발생
+        if (isDuplicate) {
+            throw new BusinessException(ErrorCode.USER_PHONE_DUPLICATE); // USER_005
+        }
+
+        return true;
     }
 
     /**
-     * 4. 전화번호 중복 확인
-     * @param phoneNumber 검사할 전화번호
-     * @return 중복 여부
+     * 4. 닉네임 중복 및 유효성 확인
+     * 기능: 공백 제거, 형식 검사(2~10자), 대소문자 무시 중복 체크, 본인 제외(수정 시)
      */
     @Transactional(readOnly = true)
     @Override
-    public boolean checkPhoneDuplicate(String phoneNumber) {
-        return userRepository.existsByPhoneNumber(phoneNumber);
+    public boolean isNicknameAvailable(String nickname, Long currentUserId) {
+        // 1. 공백 제거 및 기본 검증
+        if (nickname == null) {
+            throw new BusinessException(ErrorCode.USER_NICKNAME_FORMAT_INVALID);
+        }
+
+        String targetNickname = nickname.trim();
+
+        // 2. 형식 검사 (USER_007)
+        String regex = "^[a-zA-Z0-9가-힣]{2,10}$";
+        if (!targetNickname.matches(regex)) {
+            throw new BusinessException(ErrorCode.USER_NICKNAME_FORMAT_INVALID);
+        }
+
+        // 3. 중복 체크 분기
+        boolean isDuplicate;
+        if (currentUserId == null) {
+            // 회원가입 시: 전체 검색
+            isDuplicate = userRepository.existsByNicknameIgnoreCase(targetNickname);
+        } else {
+            // 마이페이지 수정 시: 나(currentUserId)를 제외하고 검색
+            isDuplicate = userRepository.existsByNicknameIgnoreCaseAndIdNot(targetNickname, currentUserId);
+        }
+
+        // 4. 중복 시 에러 발생 (USER_003)
+        if (isDuplicate) {
+            throw new BusinessException(ErrorCode.USER_NICKNAME_DUPLICATE);
+        }
+
+        return true;
     }
 
     /**
@@ -143,34 +190,4 @@ public class AuthServiceImpl implements AuthService {
         return tempPw.toString();
     }
 
-    /**
-     * 7. 닉네임 중복 및 유효성 확인 (인터페이스 신규 메서드 구현)
-     * 명세서: 대소문자 무시, 본인 제외(마이페이지용), 형식 검사 포함
-     */
-    @Transactional(readOnly = true)
-    @Override
-    public boolean isNicknameAvailable(String nickname, Long currentUserId) {
-        // 1. 유효성 검사 (USER_007)
-        String regex = "^[a-zA-Z0-9가-힣]{2,10}$";
-        if (nickname == null || !nickname.matches(regex)) {
-            throw new BusinessException(ErrorCode.USER_NICKNAME_FORMAT_INVALID);
-        }
-
-        // 2. 중복 체크 분기
-        boolean isDuplicate;
-        if (currentUserId == null) {
-            // 회원가입 시: 전체 검색
-            isDuplicate = userRepository.existsByNicknameIgnoreCase(nickname);
-        } else {
-            // 마이페이지 수정 시: 나(currentUserId)를 제외하고 검색
-            isDuplicate = userRepository.existsByNicknameIgnoreCaseAndIdNot(nickname, currentUserId);
-        }
-
-        // 3. 중복이면 에러 발생 (USER_003)
-        if (isDuplicate) {
-            throw new BusinessException(ErrorCode.USER_NICKNAME_DUPLICATE);
-        }
-
-        return true; // 여기까지 오면 사용 가능!
-    }
 }
