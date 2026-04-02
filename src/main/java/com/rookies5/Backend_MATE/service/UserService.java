@@ -33,7 +33,7 @@ public interface UserService {
     /**
      * 5. 닉네임 중복 체크 (수정 시 실시간 검증용)
      */
-    boolean checkNicknameDuplicate(String nickname);
+    boolean isNicknameAvailable(String nickname, Long currentUserId);
 
     /**
      * 6. 전화번호 중복 체크 (검증 필요 시 사용)

@@ -1,17 +1,25 @@
 package com.rookies5.Backend_MATE.controller;
 
+import com.rookies5.Backend_MATE.common.SuccessResponse;
 import com.rookies5.Backend_MATE.dto.request.UserRequestDto;
 import com.rookies5.Backend_MATE.dto.response.UserResponseDto;
+import com.rookies5.Backend_MATE.exception.BusinessException;
+import com.rookies5.Backend_MATE.exception.ErrorCode;
 import com.rookies5.Backend_MATE.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Slf4j
 public class AuthController {
 
     private final AuthService authService; // AuthServiceImpl이 주입됩니다.
@@ -38,10 +46,27 @@ public class AuthController {
 
     /**
      * 3. 닉네임 중복 확인
+     * GET /api/auth/check-nickname?nickname=개발왕&userId=1
      */
     @GetMapping("/check-nickname")
-    public ResponseEntity<Boolean> checkNickname(@RequestParam String nickname) {
-        return ResponseEntity.ok(authService.checkNicknameDuplicate(nickname));
+    public SuccessResponse<Map<String, Boolean>> checkNickname(
+            @RequestParam String nickname,
+            @RequestParam(required = false) Long userId) { // 👈 userId를 선택적으로 받게 추가!
+
+        log.info("닉네임 중복 확인 요청: {} (userId: {})", nickname, userId);
+
+        // 1. 서비스 호출 (기존 checkNicknameDuplicate 대신 우리가 만든 isNicknameAvailable 추천)
+        // 만약 서비스 메서드명을 안 바꿨다면 파라미터에 userId만 추가해서 호출하세요.
+        boolean isAvailable = authService.isNicknameAvailable(nickname, userId);
+
+        // 2. 데이터 구성
+        Map<String, Boolean> data = new HashMap<>();
+        data.put("isAvailable", isAvailable);
+
+        // 3. 중복이거나 형식이 틀린 경우 서비스(isNicknameAvailable)에서 이미 Exception을 던지므로
+        // 컨트롤러에서는 깔끔하게 리턴만 하면 됩니다!
+
+        return new SuccessResponse<>("사용 가능한 닉네임입니다.", data);
     }
 
     /**

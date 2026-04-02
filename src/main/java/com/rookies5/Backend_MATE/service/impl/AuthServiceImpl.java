@@ -142,4 +142,35 @@ public class AuthServiceImpl implements AuthService {
         }
         return tempPw.toString();
     }
+
+    /**
+     * 7. 닉네임 중복 및 유효성 확인 (인터페이스 신규 메서드 구현)
+     * 명세서: 대소문자 무시, 본인 제외(마이페이지용), 형식 검사 포함
+     */
+    @Transactional(readOnly = true)
+    @Override
+    public boolean isNicknameAvailable(String nickname, Long currentUserId) {
+        // 1. 유효성 검사 (USER_007)
+        String regex = "^[a-zA-Z0-9가-힣]{2,10}$";
+        if (nickname == null || !nickname.matches(regex)) {
+            throw new BusinessException(ErrorCode.USER_NICKNAME_FORMAT_INVALID);
+        }
+
+        // 2. 중복 체크 분기
+        boolean isDuplicate;
+        if (currentUserId == null) {
+            // 회원가입 시: 전체 검색
+            isDuplicate = userRepository.existsByNicknameIgnoreCase(nickname);
+        } else {
+            // 마이페이지 수정 시: 나(currentUserId)를 제외하고 검색
+            isDuplicate = userRepository.existsByNicknameIgnoreCaseAndIdNot(nickname, currentUserId);
+        }
+
+        // 3. 중복이면 에러 발생 (USER_003)
+        if (isDuplicate) {
+            throw new BusinessException(ErrorCode.USER_NICKNAME_DUPLICATE);
+        }
+
+        return true; // 여기까지 오면 사용 가능!
+    }
 }

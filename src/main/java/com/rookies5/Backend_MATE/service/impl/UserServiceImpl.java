@@ -70,9 +70,8 @@ public class UserServiceImpl implements UserService {
 
         // 닉네임 변경 시에만 중복 체크 실행
         if (requestDto.getNickname() != null && !user.getNickname().equals(requestDto.getNickname())) {
-            if (checkNicknameDuplicate(requestDto.getNickname())) {
-                throw new BusinessException(ErrorCode.USER_NICKNAME_DUPLICATE);
-            }
+            // 이 메서드 안에서 중복/형식 에러를 다 던져주므로 호출만 하면 끝!
+            isNicknameAvailable(requestDto.getNickname(), userId);
         }
 
         user.updateProfile(
@@ -100,12 +99,32 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
-     * 5. 닉네임 중복 확인
+     * 5. 닉네임 중복 및 유효성 확인
      */
-    @Transactional(readOnly = true)
     @Override
-    public boolean checkNicknameDuplicate(String nickname) {
-        return userRepository.existsByNickname(nickname);
+    @Transactional(readOnly = true)
+    public boolean isNicknameAvailable(String nickname, Long currentUserId) {
+        // 1. 유효성 검사 (형식 에러 - USER_007)
+        String regex = "^[a-zA-Z0-9가-힣]{2,10}$";
+        if (nickname == null || !nickname.matches(regex)) {
+            throw new BusinessException(ErrorCode.USER_NICKNAME_FORMAT_INVALID);
+        }
+
+        // 2. 중복 체크 (진짜 중복 에러 - USER_003)
+        boolean isDuplicate;
+        if (currentUserId == null) {
+            // 회원가입 시: 전체 중복 체크
+            isDuplicate = userRepository.existsByNicknameIgnoreCase(nickname);
+        } else {
+            // 마이페이지 수정 시: '나'를 제외하고 중복 체크 (UserIdNot -> IdNot으로 수정)
+            isDuplicate = userRepository.existsByNicknameIgnoreCaseAndIdNot(nickname, currentUserId);
+        }
+
+        if (isDuplicate) {
+            throw new BusinessException(ErrorCode.USER_NICKNAME_DUPLICATE);
+        }
+
+        return true;
     }
 
     /**

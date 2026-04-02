@@ -20,6 +20,7 @@ public enum ErrorCode {
     USER_ACTIVE_PROJECT_EXISTS("USER_004", "진행 중인 프로젝트가 있어 탈퇴할 수 없습니다", HttpStatus.UNPROCESSABLE_ENTITY),
     USER_PHONE_DUPLICATE("USER_005", "이미 사용 중인 전화번호입니다", HttpStatus.CONFLICT),
     USER_NOT_MATCHED("USER_006", "입력된 이메일과 전화번호가 일치하는 사용자가 없습니다", HttpStatus.NOT_FOUND),
+    USER_NICKNAME_FORMAT_INVALID("USER_007", "닉네임은 2~10자의 영문, 숫자, 한글만 가능합니다", HttpStatus.BAD_REQUEST),
 
     // 파일/이미지 관련 (400, 415)
     FILE_SIZE_EXCEEDED("FILE_001", "파일 크기는 최대 5MB까지만 허용됩니다", HttpStatus.BAD_REQUEST),
