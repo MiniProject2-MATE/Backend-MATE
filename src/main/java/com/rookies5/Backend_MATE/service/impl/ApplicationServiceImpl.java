@@ -17,6 +17,7 @@ import com.rookies5.Backend_MATE.repository.ApplicationRepository;
 import com.rookies5.Backend_MATE.repository.ProjectMemberRepository;
 import com.rookies5.Backend_MATE.repository.ProjectRepository;
 import com.rookies5.Backend_MATE.repository.UserRepository;
+import com.rookies5.Backend_MATE.security.SecurityUtils; // [추가]
 import com.rookies5.Backend_MATE.service.ApplicationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -83,6 +84,12 @@ public class ApplicationServiceImpl implements ApplicationService {
         Application application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.APPLY_NOT_FOUND, applicationId));
 
+        // [추가] 지원자 본인만 취소 가능하도록 권한 검증
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        if (!application.getApplicant().getId().equals(currentUserId)) {
+            throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED);
+        }
+
         if (application.getStatus() != ApplicationStatus.PENDING) {
             throw new BusinessException(ErrorCode.APPLY_CANNOT_CANCEL);
         }
@@ -109,6 +116,12 @@ public class ApplicationServiceImpl implements ApplicationService {
     public ApplicationResponseDto acceptApplication(Long applicationId) {
         Application application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.APPLY_NOT_FOUND, applicationId));
+
+        // [추가] 해당 프로젝트의 방장만 승인 가능
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        if (!application.getProject().getOwner().getId().equals(currentUserId)) {
+            throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED);
+        }
 
         if (application.getStatus() != ApplicationStatus.PENDING) {
             throw new BusinessException(ErrorCode.APPLY_CANNOT_CANCEL, "이미 처리된 지원서입니다.");
@@ -148,6 +161,12 @@ public class ApplicationServiceImpl implements ApplicationService {
     public ApplicationResponseDto rejectApplication(Long applicationId) {
         Application application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.APPLY_NOT_FOUND, applicationId));
+
+        // [추가] 해당 프로젝트의 방장만 거절 가능
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        if (!application.getProject().getOwner().getId().equals(currentUserId)) {
+            throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED);
+        }
 
         if (application.getStatus() != ApplicationStatus.PENDING) {
             throw new BusinessException(ErrorCode.APPLY_CANNOT_CANCEL, "이미 처리된 지원서입니다.");
