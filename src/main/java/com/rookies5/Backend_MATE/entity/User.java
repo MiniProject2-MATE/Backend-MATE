@@ -13,9 +13,9 @@ import java.util.*;
 
 @Entity
 @Table(name = "users", indexes = {
-    @Index(name = "idx_email", columnList = "email"),
-    @Index(name = "idx_nickname", columnList = "nickname"),
-    @Index(name = "idx_phone_number", columnList = "phone_number")
+        @Index(name = "idx_email", columnList = "email"),
+        @Index(name = "idx_nickname", columnList = "nickname"),
+        @Index(name = "idx_phone_number", columnList = "phone_number")
 })
 @Where(clause = "deleted_at IS NULL")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

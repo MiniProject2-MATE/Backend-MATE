@@ -2,6 +2,7 @@ package com.rookies5.Backend_MATE.dto.request;
 
 import com.rookies5.Backend_MATE.entity.enums.Category;
 import com.rookies5.Backend_MATE.entity.enums.OnOffline;
+import com.rookies5.Backend_MATE.entity.enums.ProjectStatus;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -31,6 +32,8 @@ public class ProjectRequestDto {
 
     @NotNull(message = "진행 방식은 필수입니다.")
     private OnOffline onOffline;
+
+    private ProjectStatus status;
 
     @NotNull(message = "마감일은 필수입니다.")
     @FutureOrPresent(message = "마감일은 오늘 이후여야 합니다.")

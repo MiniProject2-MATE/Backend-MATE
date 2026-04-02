@@ -9,7 +9,7 @@ public interface ApplicationService {
 
     /**
      * 프로젝트 지원하기
-     * @param requestDto 지원 정보 (메시지 등)
+     * @param requestDto 지원 정보 (projectId, applicantId, message)
      * @return 생성된 지원서 정보
      */
     ApplicationResponseDto applyToProject(ApplicationRequestDto requestDto);
@@ -22,10 +22,29 @@ public interface ApplicationService {
     List<ApplicationResponseDto> getApplicationsByProjectId(Long projectId);
 
     /**
-     * 지원 취소하기
+     * 지원 취소하기 (PENDING 상태일 때만 가능)
      * @param applicationId 지원서 ID
      */
     void deleteApplication(Long applicationId);
 
-    List<ApplicationResponseDto> getMyPendingApplications(Long userId); // 내 신청 현황
+    /**
+     * 내 신청 현황 조회 (PENDING, REJECTED 상태)
+     * @param userId 조회할 유저 ID
+     * @return 지원서 리스트
+     */
+    List<ApplicationResponseDto> getMyPendingApplications(Long userId);
+
+    /**
+     * 지원서 승인 (방장용) - ProjectMember 테이블에 팀원으로 추가
+     * @param applicationId 승인할 지원서 ID
+     * @return 승인된 지원서 정보
+     */
+    ApplicationResponseDto acceptApplication(Long applicationId);
+
+    /**
+     * 지원서 거절 (방장용)
+     * @param applicationId 거절할 지원서 ID
+     * @return 거절된 지원서 정보
+     */
+    ApplicationResponseDto rejectApplication(Long applicationId);
 }

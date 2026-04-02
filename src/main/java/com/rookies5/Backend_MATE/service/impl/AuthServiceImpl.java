@@ -27,30 +27,44 @@ import org.springframework.web.multipart.MultipartFile;
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
+
+    // Security 관련 의존성 추가
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
 
+    /**
+     * 1. 신규 회원을 등록(회원가입) - 검증 로직 + 비밀번호 암호화 통합
+     */
     @Override
     public UserResponseDto register(UserRequestDto requestDto, MultipartFile profileImage) {
+        // [Controller 버전] 이메일, 전화번호 유효성 + 중복 한 번에 체크
         isEmailAvailable(requestDto.getEmail());
         isPhoneAvailable(requestDto.getPhoneNumber(), null);
 
+        // [Security 버전] 비밀번호 암호화 적용
         String encodedPassword = passwordEncoder.encode(requestDto.getPassword());
         requestDto.setPassword(encodedPassword);
 
+        // 이미지 처리 로직
         if (profileImage != null && !profileImage.isEmpty()) {
             String profileImgUrl = "https://mate-s3.com/uploaded-" + profileImage.getOriginalFilename();
             requestDto.setProfileImg(profileImgUrl);
         }
 
+        // Entity 변환
         User user = UserMapper.mapToUser(requestDto);
+
+        // [Controller 버전] 최종 확정된 닉네임 유효성 + 중복 체크
         isNicknameAvailable(user.getNickname(), null);
 
         User savedUser = userRepository.save(user);
         return UserMapper.mapToUserResponse(savedUser);
     }
 
+    /**
+     * 2. 로그인 및 토큰 발급 (Security 버전 유지)
+     */
     @Override
     @Transactional(readOnly = true)
     public AuthResponseDto login(String email, String password) {
@@ -83,6 +97,9 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
+    /**
+     * 3. 이메일 유효성 및 중복 확인 (Controller 버전 유지)
+     */
     @Transactional(readOnly = true)
     @Override
     public boolean isEmailAvailable(String email) {
@@ -96,6 +113,9 @@ public class AuthServiceImpl implements AuthService {
         return true;
     }
 
+    /**
+     * 4. 전화번호 가용성 체크 (Controller 버전 유지)
+     */
     @Transactional(readOnly = true)
     @Override
     public boolean isPhoneAvailable(String phoneNumber, Long userId) {
@@ -111,6 +131,9 @@ public class AuthServiceImpl implements AuthService {
         return true;
     }
 
+    /**
+     * 5. 닉네임 가용성 체크 (Controller 버전 유지)
+     */
     @Transactional(readOnly = true)
     @Override
     public boolean isNicknameAvailable(String nickname, Long currentUserId) {
@@ -126,6 +149,9 @@ public class AuthServiceImpl implements AuthService {
         return true;
     }
 
+    /**
+     * 6. 아이디(이메일) 찾기 (공통)
+     */
     @Transactional(readOnly = true)
     @Override
     public String findEmailByPhoneNumber(String phoneNumber) {
@@ -134,14 +160,20 @@ public class AuthServiceImpl implements AuthService {
         return user.getEmail();
     }
 
+    /**
+     * 7. 비밀번호 찾기 (Controller의 반환값 + Security의 암호화 저장 통합)
+     */
     @Override
     public String resetPassword(String email, String phoneNumber) {
         User user = userRepository.findByEmailAndPhoneNumber(email, phoneNumber)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_MATCHED));
 
         String tempPassword = generateTempPassword();
+
+        // 💡 Security 버전의 필수 로직: DB에 저장할 때는 반드시 암호화!
         user.updatePassword(passwordEncoder.encode(tempPassword));
 
+        // Controller 버전의 필수 로직: 생성된 임시 비밀번호를 화면에 보여주기 위해 평문 반환
         return tempPassword;
     }
 
