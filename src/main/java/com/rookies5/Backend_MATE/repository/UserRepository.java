@@ -21,7 +21,16 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // 4.1.7 닉네임 중복 확인
     boolean existsByNickname(String nickname);
 
-    // 4.1.5 비밀번호 찾기용 (이메일과 전화번호 동시 만족)
+    // 4.1.8 대소문자 구분 없이 닉네임 중복 확인
+    boolean existsByNicknameIgnoreCase(String nickname);
+
+    // 4.1.9 나를 제외하고 해당 닉네임을 쓰는 사람이 있는지 확인 (마이페이지용)
+    boolean existsByNicknameIgnoreCaseAndIdNot(String nickname, Long id);
+
+    // 4.1.10 비밀번호 찾기용 (이메일과 전화번호 동시 만족)
     Optional<User> findByEmailAndPhoneNumber(String email, String phoneNumber);
+
+    // 나(id)를 제외하고 해당 전화번호를 사용하는 사람이 있는지 확인 (마이페이지 수정용)
+    boolean existsByPhoneNumberAndIdNot(String phoneNumber, Long id);
 
 }
