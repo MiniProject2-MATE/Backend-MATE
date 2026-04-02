@@ -1,22 +1,5 @@
 package com.rookies5.Backend_MATE.config;
 
-<<<<<<< HEAD
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.web.SecurityFilterChain;
-
-@Configuration
-public class SecurityConfig {
-
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(csrf -> csrf.disable()) // POST 테스트를 위해 CSRF 비활성화
-                .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll() // 모든 요청을 일단 허용!
-                );
-=======
 import com.rookies5.Backend_MATE.security.JwtAccessDeniedHandler;
 import com.rookies5.Backend_MATE.security.JwtAuthenticationEntryPoint;
 import com.rookies5.Backend_MATE.security.JwtAuthenticationFilter;
@@ -61,38 +44,37 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            .formLogin(AbstractHttpConfigurer::disable)
-            .httpBasic(AbstractHttpConfigurer::disable)
-            
-            // 우리가 만든 예외 처리기 부착
-            .exceptionHandling(exception -> exception
-                .authenticationEntryPoint(jwtAuthenticationEntryPoint) // 401 처리
-                .accessDeniedHandler(jwtAccessDeniedHandler) // 403 처리
-            )
+                .csrf(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
 
-            // 세션 사용 안 함 (STATELESS)
-            .sessionManagement(session -> 
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            
-            // 토큰 검사 요원(Filter)을 아이디/비밀번호 검사기보다 먼저 배치
-            .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
+                // 우리가 만든 예외 처리기 부착
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint) // 401 처리
+                        .accessDeniedHandler(jwtAccessDeniedHandler) // 403 처리
+                )
 
-            // API 명세서 기반 권한 맵핑
-            .authorizeHttpRequests(auth -> auth
-                // GUEST (누구나 접근 가능 API)
-                .requestMatchers("/api/auth/**").permitAll() 
-                .requestMatchers(HttpMethod.GET, "/api/posts", "/api/posts/{id}").permitAll() 
-                .requestMatchers(HttpMethod.GET, "/api/users/check-phone", "/api/users/check-nickname").permitAll()
-                
-                // ADMIN (관리자 전용 API)
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                
-                // 나머지 모든 요청은 USER 이상 (토큰 필수)
-                .anyRequest().authenticated() 
-            );
+                // 세션 사용 안 함 (STATELESS)
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
->>>>>>> feat/security
+                // 토큰 검사 요원(Filter)을 아이디/비밀번호 검사기보다 먼저 배치
+                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
+
+                // API 명세서 기반 권한 맵핑
+                .authorizeHttpRequests(auth -> auth
+                        // GUEST (누구나 접근 가능 API)
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/posts", "/api/posts/{id}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/users/check-phone", "/api/users/check-nickname").permitAll()
+
+                        // ADMIN (관리자 전용 API)
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+
+                        // 나머지 모든 요청은 USER 이상 (토큰 필수)
+                        .anyRequest().authenticated()
+                );
+
         return http.build();
     }
 }
