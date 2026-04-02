@@ -22,8 +22,8 @@ public class BoardPostController {
     /**
      * 새로운 게시글 작성
      */
-    @PostMapping
-    public SuccessResponse<BoardPostResponseDto> createPost(@Valid @RequestBody BoardPostRequestDto requestDto) {
+    @PostMapping("/{projectId}/board")
+    public SuccessResponse<BoardPostResponseDto> createPost(@PathVariable Long projectId, @Valid @RequestBody BoardPostRequestDto requestDto) {
         log.info("게시글 작성 요청 - projectId: {}, authorId: {}", requestDto.getProjectId(), requestDto.getAuthorId());
         BoardPostResponseDto responseDto = boardPostService.createPost(requestDto);
         return new SuccessResponse<>("게시글이 성공적으로 작성되었습니다.", responseDto);
