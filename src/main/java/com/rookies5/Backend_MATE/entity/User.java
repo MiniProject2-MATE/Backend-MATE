@@ -2,6 +2,7 @@ package com.rookies5.Backend_MATE.entity;
 
 import com.rookies5.Backend_MATE.entity.BaseEntity;
 import com.rookies5.Backend_MATE.entity.enums.Position;
+import com.rookies5.Backend_MATE.entity.enums.UserRole;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -44,6 +45,11 @@ public class User extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Position position;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private UserRole role = UserRole.ROLE_USER;
 
     @Column(name = "profile_img", length = 255)
     private String profileImg;
