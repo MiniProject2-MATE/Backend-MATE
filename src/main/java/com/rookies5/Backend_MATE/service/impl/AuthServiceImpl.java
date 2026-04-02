@@ -12,6 +12,7 @@ import com.rookies5.Backend_MATE.repository.UserRepository;
 import com.rookies5.Backend_MATE.security.JwtTokenProvider;
 import com.rookies5.Backend_MATE.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -24,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Slf4j
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
@@ -33,29 +35,54 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
 
+    // ✨ 추가: 이미지가 저장될 실제 경로 (내 컴퓨터 사용자 폴더 하위)
+    private final String uploadPath = System.getProperty("user.home") + "/mate_uploads/profiles/";
+
     /**
-     * 1. 신규 회원을 등록(회원가입) - 검증 로직 + 비밀번호 암호화 통합
+     * 1. 신규 회원을 등록(회원가입) - 이미지 로컬 저장 로직 적용
      */
     @Override
     public UserResponseDto register(UserRequestDto requestDto, MultipartFile profileImage) {
-        // [Controller 버전] 이메일, 전화번호 유효성 + 중복 한 번에 체크
+        // 중복 체크
         isEmailAvailable(requestDto.getEmail());
         isPhoneAvailable(requestDto.getPhoneNumber(), null);
 
-        // [Security 버전] 비밀번호 암호화 적용
+        // 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(requestDto.getPassword());
         requestDto.setPassword(encodedPassword);
 
-        // 이미지 처리 로직
+        // ✨ 이미지 처리 로직 수정됨
         if (profileImage != null && !profileImage.isEmpty()) {
-            String profileImgUrl = "https://mate-s3.com/uploaded-" + profileImage.getOriginalFilename();
-            requestDto.setProfileImg(profileImgUrl);
+            try {
+                // 1. 폴더 생성 (없으면 자동 생성)
+                java.io.File folder = new java.io.File(uploadPath);
+                if (!folder.exists()) folder.mkdirs();
+
+                // 2. 파일명 생성 (UUID를 써서 겹치지 않게 함)
+                String originalFilename = profileImage.getOriginalFilename();
+                String extension = "";
+                if (originalFilename != null && originalFilename.contains(".")) {
+                    extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+                }
+                String storeFilename = java.util.UUID.randomUUID().toString() + extension;
+
+                // 3. 내 컴퓨터 폴더에 실제 파일 저장
+                profileImage.transferTo(new java.io.File(uploadPath + storeFilename));
+
+                // 4. DTO에 저장된 상대 경로 세팅 (프론트엔드 접근용)
+                requestDto.setProfileImg("/uploads/profiles/" + storeFilename);
+
+                log.info("프로필 이미지 저장 성공: {}", storeFilename);
+            } catch (java.io.IOException e) {
+                log.error("파일 저장 중 오류 발생: {}", e.getMessage());
+                throw new BusinessException(ErrorCode.FILE_UPLOAD_ERROR); // 이 에러코드 꼭 추가하세요!
+            }
         }
 
-        // Entity 변환
+        // Entity 변환 (Mapper에서 profileImg를 꺼내 쓰도록 되어 있어야 함)
         User user = UserMapper.mapToUser(requestDto);
 
-        // [Controller 버전] 최종 확정된 닉네임 유효성 + 중복 체크
+        // 닉네임 중복 체크
         isNicknameAvailable(user.getNickname(), null);
 
         User savedUser = userRepository.save(user);

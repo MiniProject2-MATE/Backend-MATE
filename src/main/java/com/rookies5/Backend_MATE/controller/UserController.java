@@ -1,12 +1,16 @@
 package com.rookies5.Backend_MATE.controller;
 
+import com.rookies5.Backend_MATE.common.SuccessResponse;
 import com.rookies5.Backend_MATE.dto.request.UserRequestDto;
 import com.rookies5.Backend_MATE.dto.response.ApplicationResponseDto;
 import com.rookies5.Backend_MATE.dto.response.ProjectResponseDto;
 import com.rookies5.Backend_MATE.dto.response.UserResponseDto;
 import com.rookies5.Backend_MATE.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -15,6 +19,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
+@Slf4j
 public class UserController {
 
     private final UserService userService;
@@ -46,11 +51,30 @@ public class UserController {
     }
 
     /**
-     * 3. 프로필 이미지 수정
+     * 3. 프로필 이미지 수정 (지호님 패턴 맞춤 적용)
      */
-    @PostMapping("/{userId}/profile-image")
-    public ResponseEntity<String> updateProfileImage(@PathVariable Long userId, @RequestParam("file") MultipartFile file) {
-        return ResponseEntity.ok(userService.updateProfileImage(userId, file));
+    @PatchMapping(value = "/profile-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public SuccessResponse<String> updateProfileImage(
+            @RequestParam("userId") Long userId,
+            @RequestPart("profileImage") MultipartFile profileImage) {
+
+        log.info("프로필 이미지 수정 요청 - 유저 ID: {}", userId);
+        String newImgUrl = userService.updateProfileImage(userId, profileImage);
+
+        return new SuccessResponse<>("프로필 이미지가 성공적으로 수정되었습니다.", newImgUrl);
+    }
+
+    /**
+     * 4. 프로필 이미지 삭제 (기본 이미지로 복구)
+     */
+    @DeleteMapping("/profile-image")
+    public SuccessResponse<Void> deleteProfileImage(
+            @RequestParam("userId") Long userId) {
+
+        log.info("프로필 이미지 삭제 요청 - 유저 ID: {}", userId);
+        userService.deleteProfileImage(userId);
+
+        return new SuccessResponse<>("프로필 이미지가 기본 이미지로 초기화되었습니다.");
     }
 
     // --- 마이페이지 활동 이력 3종 세트 ---

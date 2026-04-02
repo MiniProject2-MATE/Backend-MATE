@@ -26,6 +26,7 @@ public enum ErrorCode {
     // 파일/이미지 관련 (400, 415)
     FILE_SIZE_EXCEEDED("FILE_001", "파일 크기는 최대 5MB까지만 허용됩니다", HttpStatus.BAD_REQUEST),
     FILE_UNSUPPORTED_EXTENSION("FILE_002", "JPG, JPEG, PNG 형식의 이미지만 업로드 가능합니다", HttpStatus.UNSUPPORTED_MEDIA_TYPE),
+    FILE_UPLOAD_ERROR("FILE_003", "파일 업로드 중 서버 오류가 발생했습니다", HttpStatus.INTERNAL_SERVER_ERROR),
 
     // 프로젝트(모집글) 관련 (40X, 422)
     PROJECT_NOT_FOUND("PROJECT_001", "해당 프로젝트를 찾을 수 없습니다", HttpStatus.NOT_FOUND),

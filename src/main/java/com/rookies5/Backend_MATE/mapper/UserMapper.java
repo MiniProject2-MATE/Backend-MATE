@@ -35,7 +35,7 @@ public class UserMapper {
 
         return User.builder()
                 .email(requestDto.getEmail())
-                .password(requestDto.getPassword()) // 💡 암호화는 나중에 Service에서!
+                .password(requestDto.getPassword())
                 .nickname(finalNickname)
                 .phoneNumber(requestDto.getPhoneNumber())
                 .position(requestDto.getPosition())
