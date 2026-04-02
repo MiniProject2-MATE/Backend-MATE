@@ -13,7 +13,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/projects")
+@RequestMapping("/api/posts")
 @RequiredArgsConstructor
 public class ProjectController {
 
