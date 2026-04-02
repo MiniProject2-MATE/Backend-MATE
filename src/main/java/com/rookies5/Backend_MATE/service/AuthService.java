@@ -1,6 +1,7 @@
 package com.rookies5.Backend_MATE.service;
 
 import com.rookies5.Backend_MATE.dto.request.UserRequestDto;
+import com.rookies5.Backend_MATE.dto.response.AuthResponseDto;
 import com.rookies5.Backend_MATE.dto.response.UserResponseDto;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -30,9 +31,16 @@ public interface AuthService {
      * 5. 아이디(이메일) 찾기
      */
     String findEmailByPhoneNumber(String phoneNumber);
+<<<<<<< HEAD
 
     /**
      * 6. 비밀번호 재설정 (임시 비밀번호 발급)
      */
     String resetPassword(String email, String phoneNumber);
+=======
+    void resetPassword(String email, String phoneNumber);
+
+    // 4. 로그인
+    AuthResponseDto login(String email, String password);
+>>>>>>> feat/security
 }
