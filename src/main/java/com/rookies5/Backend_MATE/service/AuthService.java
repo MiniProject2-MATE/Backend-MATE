@@ -31,7 +31,6 @@ public interface AuthService {
      * 5. 아이디(이메일) 찾기
      */
     String findEmailByPhoneNumber(String phoneNumber);
-<<<<<<< HEAD
 
     /**
     * 6. 비밀번호 재설정 (임시 비밀번호 발급)
