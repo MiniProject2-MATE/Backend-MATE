@@ -34,13 +34,10 @@ public interface AuthService {
 <<<<<<< HEAD
 
     /**
-     * 6. 비밀번호 재설정 (임시 비밀번호 발급)
-     */
+    * 6. 비밀번호 재설정 (임시 비밀번호 발급)
+    */
     String resetPassword(String email, String phoneNumber);
-=======
-    void resetPassword(String email, String phoneNumber);
 
     // 4. 로그인
     AuthResponseDto login(String email, String password);
->>>>>>> feat/security
 }
