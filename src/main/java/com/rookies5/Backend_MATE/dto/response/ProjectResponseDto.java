@@ -6,6 +6,7 @@ import com.rookies5.Backend_MATE.entity.enums.ProjectStatus;
 import lombok.Builder;
 import lombok.Getter;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Builder
@@ -25,4 +26,5 @@ public class ProjectResponseDto {
     
     private LocalDate endDate;
     private Long remainingDays; // 마감까지 남은 일수 (D-Day 계산용)
+    private LocalDateTime createdAt;
 }

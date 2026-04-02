@@ -3,6 +3,8 @@ package com.rookies5.Backend_MATE.dto.response;
 import com.rookies5.Backend_MATE.entity.enums.Position;
 import lombok.Builder;
 import lombok.Getter;
+
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Getter
@@ -15,4 +17,5 @@ public class UserResponseDto {
     private Position position;
     private Set<String> techStacks;
     private String profileImg;
+    private LocalDateTime createdAt;
 }

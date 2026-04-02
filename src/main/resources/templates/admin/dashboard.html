@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>관리자 대시보드</title>
+
+    <style>
+        body { margin:0; font-family:Arial; background:#f1f5f9; }
+
+        .header { display:flex; justify-content:space-between; align-items:center; padding:15px 20px; background:#1e293b; color:white; }
+        .left { display:flex; gap:20px; align-items:center; }
+        .title { font-weight:bold; font-size:18px; }
+
+        .header-right { display:flex; gap:10px; align-items:center; }
+        .search-box { display:flex; align-items:center; gap:5px; }
+        .search-box input { padding:6px 10px; border-radius:5px; border:none; }
+        .search-box button { padding:6px 10px; border:none; border-radius:5px; background:#6366f1; color:white; cursor:pointer; }
+
+        .container { display:flex; }
+        .sidebar { width:220px; background:#0f172a; color:white; padding:20px; height:100vh; }
+        .sidebar a { display:block; padding:10px; color:white; text-decoration:none; }
+        .sidebar a:hover { background:#1e293b; }
+
+        .main { flex:1; padding:20px; }
+
+        .row { display:flex; gap:20px; }
+        .card { background:white; padding:15px; border-radius:10px; flex:1; text-align:center;}
+
+        table { width:100%; border-collapse:collapse; }
+        th, td { border-bottom:1px solid #ddd; padding:8px; text-align:center;}
+
+        .nickname { font-weight:bold; }
+        .email { font-size:12px; color:gray; }
+
+        .btn-delete { background:red; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; }
+
+        .pagination { text-align:center; margin-top:10px; }
+        .pagination a { border:1px solid #ddd; background:white; padding:5px 10px; margin:2px; border-radius:5px; text-decoration:none; color:black;}
+        .pagination .active { background:#6366f1; color:white; }
+
+        .card-left-align {text-align:left;}
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+    <div class="left">
+        <div>mate ADMIN</div>
+        <div class="title">대시보드</div>
+    </div>
+
+    <div class="header-right">
+        <form class="search-box" action="/admin/search" method="get">
+            <input type="text" name="keyword" th:value="${keyword}" placeholder="회원 또는 게시글 검색...">
+            <button type="submit">🔍</button>
+        </form>
+        <div>📊</div>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="sidebar">
+        <div>👤 관리자</div>
+        <div>Super Admin</div>
+
+        <a href="/admin/dashboard">📊 대시보드</a>
+        <a href="/admin/users">👥 회원관리</a>
+        <a href="/admin/projects">📋 게시글관리</a>
+        <a href="/admin/logs">📜 활동로그</a>
+
+        <div style="margin-top:50px;">
+            <a href="#">🚪 로그아웃</a>
+        </div>
+    </div>
+
+    <div class="main">
+
+        <!-- 카드 -->
+        <div class="row">
+            <div class="card">
+                <h3>전체 회원</h3>
+                <p th:text="${userCount}">0</p>
+            </div>
+
+            <div class="card">
+                <h3>전체 모집글</h3>
+                <p th:text="${projectCount}">0</p>
+            </div>
+        </div>
+
+        <br>
+
+        <div class="row">
+
+            <!-- 회원 -->
+            <div class="card">
+                <h3>최근 가입 회원</h3>
+
+                <table>
+                    <tr>
+                        <th>회원정보</th>
+                        <th>가입일</th>
+                        <th>관리</th>
+                    </tr>
+
+                    <tr th:each="u : ${users.content}">
+                        <td>
+                            <div class="nickname" th:text="${u.nickname}"></div>
+                            <div class="email" th:text="${u.email}"></div>
+                        </td>
+                        <td th:text="${u.createdAt}"></td>
+                        <td>
+                            <button class="btn-detail" th:attr="data-id=${u.id}">상세</button>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- 페이징 -->
+                <div class="pagination">
+                    <a th:href="@{/admin/dashboard(userPage=0, projectPage=${projects.number})}">&lt;&lt;</a>
+
+                    <a th:if="${users.number > 0}"
+                       th:href="@{/admin/dashboard(userPage=${users.number-1}, projectPage=${projects.number})}">&lt;</a>
+
+                    <span th:each="i : ${#numbers.sequence(0, users.totalPages-1)}"
+                          th:if="${i >= users.number-2 and i <= users.number+2}">
+                        <a th:href="@{/admin/dashboard(userPage=${i}, projectPage=${projects.number})}"
+                           th:text="${i+1}"
+                           th:classappend="${i==users.number} ? 'active'"></a>
+                    </span>
+
+                    <a th:if="${users.number < users.totalPages-1}"
+                       th:href="@{/admin/dashboard(userPage=${users.number+1}, projectPage=${projects.number})}">&gt;</a>
+
+                    <a th:href="@{/admin/dashboard(userPage=${users.totalPages-1}, projectPage=${projects.number})}">&gt;&gt;</a>
+                </div>
+            </div>
+
+            <!-- 로그 -->
+            <div class="card">
+                <h3>활동 로그</h3>
+                <ul>
+                    <li class="card-left-align" th:each="log : ${logs}" th:text="${log}"></li>
+                </ul>
+            </div>
+
+        </div>
+
+        <br>
+
+        <!-- 게시글 -->
+        <div class="card">
+            <h3>최근 게시글</h3>
+
+            <table>
+                <tr>
+                    <th>제목</th>
+                    <th>작성자</th>
+                    <th>등록일</th>
+                    <th>신청자</th>
+                    <th>관리</th>
+                </tr>
+
+                <tr th:each="p : ${projects.content}">
+                    <td th:text="${p.title}"></td>
+                    <td th:text="${p.ownerNickname != null ? p.ownerNickname : '알 수 없음'}"></td>
+                    <td th:text="${p.createdAt}"></td>
+                    <td th:text="${p.currentCount} + '명'"></td>
+                    <td>
+                        <button class="btn-project-detail" th:attr="data-id=${p.id}">상세</button>
+
+                        <form th:action="@{/admin/projects/delete/{id}(id=${p.id})}"
+                              method="post"
+                              style="display:inline;"
+                              onsubmit="return confirm('삭제하시겠습니까?');">
+
+                            <input type="hidden" name="userPage" th:value="${users.number}">
+                            <input type="hidden" name="projectPage" th:value="${projects.number}">
+
+                            <button type="submit" class="btn-delete">삭제</button>
+                        </form>
+                    </td>
+                </tr>
+            </table>
+            <!-- 프로젝트 페이징 -->
+            <div class="pagination">
+                <!-- << -->
+                <a th:href="@{/admin/dashboard(userPage=${users.number}, projectPage=0)}">&lt;&lt;</a>
+
+                <!-- < -->
+                <a th:if="${projects.number > 0}"
+                   th:href="@{/admin/dashboard(userPage=${users.number}, projectPage=${projects.number-1})}">&lt;</a>
+
+                <!-- 숫자 -->
+                <span th:each="i : ${#numbers.sequence(0, projects.totalPages-1)}"
+                      th:if="${i >= projects.number-2 and i <= projects.number+2}">
+        <a th:href="@{/admin/dashboard(userPage=${users.number}, projectPage=${i})}"
+           th:text="${i+1}"
+           th:classappend="${i==projects.number} ? 'active'"></a>
+    </span>
+
+                <!-- > -->
+                <a th:if="${projects.number < projects.totalPages-1}"
+                   th:href="@{/admin/dashboard(userPage=${users.number}, projectPage=${projects.number+1})}">&gt;</a>
+
+                <!-- >> -->
+                <a th:href="@{/admin/dashboard(userPage=${users.number}, projectPage=${projects.totalPages-1})}">&gt;&gt;</a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ✅ 회원 모달 -->
+<div id="userDetailModal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+background:white; padding:20px; border-radius:10px; z-index:1000; width:300px;">
+    <h3>회원 상세 정보</h3>
+    <div id="modalContent"></div>
+    <button onclick="closeModal()">닫기</button>
+</div>
+
+<div id="modalOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+background:rgba(0,0,0,0.5);" onclick="closeModal()"></div>
+
+<!-- ✅ 프로젝트 모달 -->
+<div id="projectDetailModal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+background:white; padding:20px; border-radius:10px; z-index:1000; width:400px;">
+    <h3>프로젝트 상세 정보</h3>
+    <div id="projectModalContent"></div>
+    <button onclick="closeProjectModal()">닫기</button>
+</div>
+
+<div id="projectModalOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+background:rgba(0,0,0,0.5);" onclick="closeProjectModal()"></div>
+
+<script>
+    document.addEventListener('click', function(e) {
+
+        if (e.target.classList.contains('btn-detail')) {
+            fetch(`/admin/users/${e.target.dataset.id}`)
+                .then(res => res.json())
+                .then(user => {
+                    document.getElementById('modalContent').innerHTML = `
+                        <p>닉네임: ${user.nickname}</p>
+                        <p>이메일: ${user.email}</p>
+                        <p>전화번호: ${user.phoneNumber || '-'}</p>
+                        <p>포지션: ${user.position}</p>
+                        <p>기술 스택: ${user.techStacks?.join(', ') || '-'}</p>
+                        <p>가입일: ${new Date(user.createdAt).toLocaleString()}</p>
+                    `;
+                    openModal();
+                });
+        }
+
+        if (e.target.classList.contains('btn-project-detail')) {
+            fetch(`/admin/projects/${e.target.dataset.id}`)
+                .then(res => res.json())
+                .then(p => {
+                    document.getElementById('projectModalContent').innerHTML = `
+                        <p>제목: ${p.title}</p>
+                        <p>작성자: ${p.ownerNickname || '알 수 없음'}</p>
+                        <p>내용: ${p.content}</p>
+                    `;
+                    openProjectModal();
+                });
+        }
+
+    });
+
+    function openModal() {
+        document.getElementById('userDetailModal').style.display = 'block';
+        document.getElementById('modalOverlay').style.display = 'block';
+    }
+
+    function closeModal() {
+        document.getElementById('userDetailModal').style.display = 'none';
+        document.getElementById('modalOverlay').style.display = 'none';
+    }
+
+    function openProjectModal() {
+        document.getElementById('projectDetailModal').style.display = 'block';
+        document.getElementById('projectModalOverlay').style.display = 'block';
+    }
+
+    function closeProjectModal() {
+        document.getElementById('projectDetailModal').style.display = 'none';
+        document.getElementById('projectModalOverlay').style.display = 'none';
+    }
+</script>
+
+</body>
+</html>
