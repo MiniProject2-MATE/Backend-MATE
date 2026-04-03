@@ -95,7 +95,7 @@ public class Project extends BaseEntity {
         this.endDate = endDate;
         this.onOffline = onOffline;
 
-        // status가 null이 아닐 때만 업데이트 (지호 님의 의도 반영!)
+        // status가 null이 아닐 때만 업데이트
         if (status != null) {
             this.status = status;
         }
