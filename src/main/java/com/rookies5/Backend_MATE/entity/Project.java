@@ -2,6 +2,7 @@ package com.rookies5.Backend_MATE.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.rookies5.Backend_MATE.dto.request.ProjectRequestDto;
 import com.rookies5.Backend_MATE.entity.BaseEntity;
 import com.rookies5.Backend_MATE.entity.enums.Category;
 import com.rookies5.Backend_MATE.entity.enums.OnOffline;
@@ -87,17 +88,13 @@ public class Project extends BaseEntity {
         }
     }
 
-    public void updateProject(String title, String content, Integer recruitCount,
-                              LocalDate endDate, OnOffline onOffline, ProjectStatus status) { // 👈 파라미터 추가
-        this.title = title;
-        this.content = content;
-        this.recruitCount = recruitCount;
-        this.endDate = endDate;
-        this.onOffline = onOffline;
-
-        // status가 null이 아닐 때만 업데이트
-        if (status != null) {
-            this.status = status;
-        }
+    public void updateProject(ProjectRequestDto dto) {
+        if (dto.getCategory() != null) this.category = dto.getCategory();
+        if (dto.getTitle() != null) this.title = dto.getTitle();
+        if (dto.getContent() != null) this.content = dto.getContent();
+        if (dto.getRecruitCount() != null) this.recruitCount = dto.getRecruitCount();
+        if (dto.getOnOffline() != null) this.onOffline = dto.getOnOffline();
+        if (dto.getEndDate() != null) this.endDate = dto.getEndDate();
+        if (dto.getStatus() != null) this.status = dto.getStatus();
     }
 }

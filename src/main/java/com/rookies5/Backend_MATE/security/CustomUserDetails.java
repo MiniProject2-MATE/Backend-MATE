@@ -37,4 +37,9 @@ public class CustomUserDetails implements UserDetails {
     public boolean isCredentialsNonExpired() { return true; }
     @Override
     public boolean isEnabled() { return true; }
+
+    // 컨트롤러에서 userDetails.getId()를 호출하면 유저 엔티티의 ID를 반환합니다.
+    public Long getId() {
+        return user.getId();
+    }
 }

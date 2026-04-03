@@ -39,16 +39,21 @@ public class ProjectServiceImpl implements ProjectService {
     private final CommentRepository commentRepository;
 
     /**
-     * 1. 프로젝트 생성
+     * 1. 프로젝트 생성 (로그인 유저 기반 자동 설정)
      */
     @Override
-    public ProjectResponseDto createProject(ProjectRequestDto requestDto) {
-        User owner = userRepository.findById(requestDto.getOwnerId())
-                .orElseThrow(() -> new EntityNotFoundException(ErrorCode.USER_NOT_FOUND, requestDto.getOwnerId()));
+    @Transactional
+    public ProjectResponseDto createProject(Long userId, ProjectRequestDto requestDto) {
+        // 1. 컨트롤러에서 넘겨받은 userId로 방장(User)을 찾습니다.
+        User owner = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
+        // 2. 매퍼를 활용해 DTO와 User 엔티티를 하나의 Project 엔티티로 합칩니다.
         Project project = ProjectMapper.mapToEntity(requestDto, owner);
+
+        // 3. 저장 후 결과를 다시 Response DTO로 변환하여 반환합니다.
         Project savedProject = projectRepository.save(project);
-        return ProjectMapper.mapToResponse(savedProject);
+        return ProjectMapper.mapToResponse(savedProject, userId);
     }
 
     /**
@@ -74,29 +79,25 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     /**
-     * 4. 수정 로직
+     * 4. 프로젝트 부분 수정 (PATCH)
      */
     @Override
-    public ProjectResponseDto updateProject(Long projectId, ProjectRequestDto requestDto) {
+    @Transactional
+    public ProjectResponseDto patchProject(Long projectId, Long userId, ProjectRequestDto requestDto) {
+        // 1. 수정할 프로젝트 조회
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new EntityNotFoundException(ErrorCode.PROJECT_NOT_FOUND, projectId));
+                .orElseThrow(() -> new BusinessException(ErrorCode.PROJECT_NOT_FOUND));
 
-        // [추가] 요청한 사용자가 프로젝트 방장인지 권한 검증
-        Long currentUserId = SecurityUtils.getCurrentUserId();
-        if (!project.getOwner().getId().equals(currentUserId)) {
+        // 2. 방장 권한 검증 (컨트롤러에서 넘겨받은 userId 사용)
+        if (!project.getOwner().getId().equals(userId)) {
             throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED);
         }
 
-        project.updateProject(
-                requestDto.getTitle(),
-                requestDto.getContent(),
-                requestDto.getRecruitCount(),
-                requestDto.getEndDate(),
-                requestDto.getOnOffline(),
-                requestDto.getStatus()
-        );
+        // 3. 엔티티 내부의 '부분 수정' 로직 호출
+        project.updateProject(requestDto);
 
-        return ProjectMapper.mapToResponse(project);
+        // 4. 변경된 엔티티를 다시 DTO로 변환 (방장 여부 계산을 위해 userId 전달)
+        return ProjectMapper.mapToResponse(project, userId);
     }
 
     /**

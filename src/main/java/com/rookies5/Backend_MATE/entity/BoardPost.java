@@ -1,5 +1,6 @@
 package com.rookies5.Backend_MATE.entity;
 
+import com.rookies5.Backend_MATE.dto.request.BoardPostRequestDto;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
@@ -41,8 +42,13 @@ public class BoardPost extends BaseEntity {
 
     public void incrementViewCount() { this.viewCount++; }
 
-    public void updatePost(String title, String content) {
-        if (title != null) this.title = title;
-        if (content != null) this.content = content;
+    public void updatePost(BoardPostRequestDto requestDto) {
+        // 값이 들어온 것만 업데이트합니다. (PATCH 방식의 핵심)
+        if (requestDto.getTitle() != null) {
+            this.title = requestDto.getTitle();
+        }
+        if (requestDto.getContent() != null) {
+            this.content = requestDto.getContent();
+        }
     }
 }
