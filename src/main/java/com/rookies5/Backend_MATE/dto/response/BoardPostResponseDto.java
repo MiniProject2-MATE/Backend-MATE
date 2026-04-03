@@ -17,4 +17,5 @@ public class BoardPostResponseDto {
     private String content;
     private Integer viewCount;
     private LocalDateTime createdAt; // BaseEntity의 필드
+    private boolean isAuthor;
 }

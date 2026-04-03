@@ -9,38 +9,34 @@ public interface BoardPostService {
 
     /**
      * 새로운 게시글 작성
-     * @param requestDto 게시글 제목, 내용 등 작성 정보
-     * @return 생성된 게시글 상세 정보 (ID, 작성자 닉네임 등 포함)
+     * @param userId 작성자 ID (추가됨)
+     * @param requestDto 게시글 작성 정보
+     * @return 생성된 게시글 상세 정보
      */
-    BoardPostResponseDto createPost(BoardPostRequestDto requestDto);
+    BoardPostResponseDto createPost(Long userId, BoardPostRequestDto requestDto);
 
     /**
      * 특정 프로젝트에 속한 모든 게시글 조회
      * @param projectId 프로젝트 ID
+     * @param userId 요청한 사용자 ID (isAuthor 판별용으로 추가됨)
      * @return 해당 프로젝트의 게시글 리스트
      */
-    List<BoardPostResponseDto> getPostsByProjectId(Long projectId);
+    List<BoardPostResponseDto> getPostsByProjectId(Long projectId, Long userId);
 
     /**
-     * 기존 게시글 수정
-     * @param postId 수정할 게시글 ID
-     * @param requestDto 수정할 내용 (제목, 내용 등)
-     * @return 수정이 완료된 게시글 정보
+     * 게시글 부분 수정 (PATCH) - 기존 updatePost를 대체하거나 함께 사용
      */
-    BoardPostResponseDto updatePost(Long postId, BoardPostRequestDto requestDto);
+    BoardPostResponseDto patchPost(Long postId, Long userId, BoardPostRequestDto requestDto);
 
     /**
      * 게시글 삭제
      * @param postId 삭제할 게시글 ID
+     * @param userId 삭제 요청자 ID (권한 검증용으로 추가 권장)
      */
-    void deletePost(Long postId);
+    void deletePost(Long postId, Long userId);
 
     /**
-     * 게시글 상세 조회 (조회수 증가 포함)
-     * @param projectId 프로젝트 ID
-     * @param postId 게시글 ID (DTO의 id와 매핑됨)
-     * @param userId 요청한 사용자 ID (권한 검증용)
-     * @return 게시글 상세 정보
+     * 게시글 상세 조회
      */
     BoardPostResponseDto getPostDetail(Long projectId, Long postId, Long userId);
 }

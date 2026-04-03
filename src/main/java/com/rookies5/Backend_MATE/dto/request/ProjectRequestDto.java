@@ -14,7 +14,6 @@ import java.time.LocalDate;
 @Getter
 @Setter
 public class ProjectRequestDto {
-    @NotNull(message = "방장 ID는 필수입니다.")
     private Long ownerId;
 
     @NotNull(message = "카테고리는 필수입니다.")

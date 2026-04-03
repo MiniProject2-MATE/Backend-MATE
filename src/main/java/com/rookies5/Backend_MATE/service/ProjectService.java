@@ -12,7 +12,7 @@ public interface ProjectService {
      * @param requestDto 카테고리, 모집 인원, 마감일 등 입력 정보
      * @return 생성된 프로젝트 상세 정보 (ID, 방장 닉네임, D-Day 포함)
      */
-    ProjectResponseDto createProject(ProjectRequestDto requestDto);
+    ProjectResponseDto createProject(Long userId, ProjectRequestDto requestDto);
 
     /**
      * 특정 프로젝트 상세 정보 조회
@@ -33,7 +33,7 @@ public interface ProjectService {
      * @param requestDto 수정할 내용 (제목, 내용, 모집 상태 등)
      * @return 수정 완료된 프로젝트 정보
      */
-    ProjectResponseDto updateProject(Long projectId, ProjectRequestDto requestDto);
+    ProjectResponseDto patchProject(Long projectId, Long userId, ProjectRequestDto requestDto);
 
     /**
      * 프로젝트 삭제

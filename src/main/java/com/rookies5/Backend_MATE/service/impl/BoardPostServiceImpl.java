@@ -5,8 +5,7 @@ import com.rookies5.Backend_MATE.dto.response.BoardPostResponseDto;
 import com.rookies5.Backend_MATE.entity.BoardPost;
 import com.rookies5.Backend_MATE.entity.Project;
 import com.rookies5.Backend_MATE.entity.User;
-import com.rookies5.Backend_MATE.exception.EntityNotFoundException;
-import com.rookies5.Backend_MATE.exception.ErrorCode;
+import com.rookies5.Backend_MATE.exception.*;
 
 import com.rookies5.Backend_MATE.mapper.BoardPostMapper;
 import com.rookies5.Backend_MATE.repository.BoardPostRepository;
@@ -17,8 +16,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.rookies5.Backend_MATE.repository.ProjectMemberRepository;
-import com.rookies5.Backend_MATE.exception.AccessDeniedException;
-import com.rookies5.Backend_MATE.exception.InvalidRequestException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,21 +34,19 @@ public class BoardPostServiceImpl implements BoardPostService {
      * 새로운 게시글 작성
      */
     @Override
-    public BoardPostResponseDto createPost(BoardPostRequestDto requestDto) {
-        // 프로젝트 존재 여부 확인 예외처리
+    public BoardPostResponseDto createPost(Long userId, BoardPostRequestDto requestDto) {
         Project project = projectRepository.findById(requestDto.getProjectId())
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.PROJECT_NOT_FOUND, requestDto.getProjectId()));
 
-        // 작성자 존재 여부 확인 예외처리
-        User author = userRepository.findById(requestDto.getAuthorId())
-                .orElseThrow(() -> new EntityNotFoundException(ErrorCode.USER_NOT_FOUND, requestDto.getAuthorId()));
+        // 수정: authorId 대신 토큰에서 넘어온 userId로 유저 조회
+        User author = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException(ErrorCode.USER_NOT_FOUND, userId));
 
-        // DTO -> Entity 변환 및 저장
         BoardPost post = BoardPostMapper.mapToEntity(requestDto, project, author);
         BoardPost savedPost = boardPostRepository.save(post);
 
-        // Entity -> Response DTO 반환
-        return BoardPostMapper.mapToResponse(savedPost);
+        // 수정: userId를 함께 넘겨줍니다.
+        return BoardPostMapper.mapToResponse(savedPost, userId);
     }
 
     /**
@@ -59,48 +54,51 @@ public class BoardPostServiceImpl implements BoardPostService {
      */
     @Transactional(readOnly = true)
     @Override
-    public List<BoardPostResponseDto> getPostsByProjectId(Long projectId) {
+    public List<BoardPostResponseDto> getPostsByProjectId(Long projectId, Long userId) {
         return boardPostRepository.findAllByProjectIdOrderByCreatedAtDesc(projectId).stream()
-                .map(BoardPostMapper::mapToResponse)
+                .map(post -> BoardPostMapper.mapToResponse(post, userId)) // 람다식으로 userId 전달
                 .collect(Collectors.toList());
     }
 
     /**
-     * 게시글 수정
+     * 게시글 부분 수정 (PATCH)
      */
     @Override
-    public BoardPostResponseDto updatePost(Long postId, BoardPostRequestDto requestDto) {
-        // 게시글 존재 여부 확인 예외처리
+    @Transactional
+    public BoardPostResponseDto patchPost(Long postId, Long userId, BoardPostRequestDto requestDto) {
+        // 1. 게시글 존재 확인
         BoardPost post = boardPostRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.BOARD_NOT_FOUND, postId));
 
-        // 추후 추가할 비즈니스 로직: 요청한 사용자가 실제 작성자인지 권한 검증
-        // if (!post.getAuthor().getId().equals(requestDto.getAuthorId())) {
-        //     throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED, "게시글 수정 권한이 없습니다.");
-        // }
+        // 2. [보안] 작성자 권한 검증 (중요!)
+        // post.getAuthor() 또는 post.getUser() 등 지호 님의 필드명에 맞춰주세요.
+        if (!post.getAuthor().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED);
+        }
 
-        // 엔티티 내부의 업데이트 로직 호출
-        post.updatePost(requestDto.getTitle(), requestDto.getContent());
+        // 3. 엔티티 내부의 부분 업데이트 호출
+        post.updatePost(requestDto);
 
-        return BoardPostMapper.mapToResponse(post);
+        // 4. 결과 반환 (필요시 userId를 넘겨서 작성자 여부 확인)
+        return BoardPostMapper.mapToResponse(post, userId);
     }
 
     /**
      * 게시글 삭제
      */
     @Override
-    public void deletePost(Long postId) {
-        // 게시글 존재 여부 확인 예외처리
+    public void deletePost(Long postId, Long userId) {
         BoardPost post = boardPostRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.BOARD_NOT_FOUND, postId));
 
-        // 추후 추가할 비즈니스 로직: 요청한 사용자가 실제 작성자이거나 방장인지 권한 검증
-        // if (!post.getAuthor().getId().equals(currentUserId)) {
-        //     throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED, "게시글 삭제 권한이 없습니다.");
-        // }
+        // 수정: 본인 확인 로직 추가
+        if (!post.getAuthor().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED);
+        }
 
         boardPostRepository.delete(post);
     }
+
     /**
      * 게시글 상세 조회 (권한 검증 및 조회수 증가 로직 포함)
      */
@@ -126,6 +124,6 @@ public class BoardPostServiceImpl implements BoardPostService {
         post.incrementViewCount();
 
         // 5. DTO 변환 후 반환 (기존 BoardPostMapper.mapToResponse 그대로 활용)
-        return BoardPostMapper.mapToResponse(post);
+        return BoardPostMapper.mapToResponse(post, userId);
     }
 }
