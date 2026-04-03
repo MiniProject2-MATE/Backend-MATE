@@ -82,6 +82,28 @@ public class AuthServiceImpl implements AuthService {
             }
         }
 
+        // 닉네임 미입력 시 이메일 기반자동 할당
+        if (requestDto.getNickname() == null || requestDto.getNickname().trim().isEmpty()) {
+            // 1. 이메일 앞자리 추출
+            String defaultNickname = requestDto.getEmail().split("@")[0];
+
+            // 2. 허용된 문자(영문, 숫자, 한글) 외의 특수문자 제거
+            defaultNickname = defaultNickname.replaceAll("[^a-zA-Z0-9가-힣]", "");
+
+            // 3. 길이가 10자를 초과하면 10자리까지만 자르기
+            if (defaultNickname.length() > 10) {
+                defaultNickname = defaultNickname.substring(0, 10);
+            }
+
+            // 4. 만약 지우고 났더니 2글자 미만이라면 기본 단어 추가 (예외 방지)
+            if (defaultNickname.length() < 2) {
+                defaultNickname = defaultNickname + "user";
+            }
+
+            requestDto.setNickname(defaultNickname);
+            log.info("닉네임 미입력으로 이메일 기반 자동 할당: {}", defaultNickname);
+        }
+
         // Entity 변환 (Mapper에서 profileImg를 꺼내 쓰도록 되어 있어야 함)
         User user = UserMapper.mapToUser(requestDto);
 
@@ -96,7 +118,7 @@ public class AuthServiceImpl implements AuthService {
      * 2. 로그인 및 토큰 발급 (Security 버전 유지)
      */
     @Override
-    @Transactional // (주의) DB 쓰기 작업이 생겼으니 readOnly = true 지우거나 그냥 @Transactional 로 변경!
+    @Transactional
     public AuthResponseDto login(String email, String password) {
         try {
             UsernamePasswordAuthenticationToken authenticationToken =
@@ -109,7 +131,7 @@ public class AuthServiceImpl implements AuthService {
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-            // [추가] Refresh Token DB 저장 로직
+            // Refresh Token DB 저장 로직
             // 이미 이 유저의 토큰이 있으면 덮어쓰고, 없으면 새로 생성해서 저장합니다.
             refreshTokenRepository.findByUserId(user.getId())
                     .ifPresentOrElse(
@@ -216,7 +238,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
-     * ✨ 추가: 토큰 재발급 로직 (Access Token 만료 시)
+     * 토큰 재발급 로직 (Access Token 만료 시)
      */
     @Override
     @Transactional
@@ -237,7 +259,6 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 4. 새로운 Access Token 발급 (기존 메서드 활용)
-        // 주의: 이 부분은 jwtTokenProvider의 로직에 따라 매개변수를 user나 authentication으로 맞춰주어야 합니다!
         Authentication authentication = new UsernamePasswordAuthenticationToken(user.getEmail(), null, null);
         String newAccessToken = jwtTokenProvider.createAccessToken(authentication);
 
