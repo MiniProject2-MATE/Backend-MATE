@@ -5,6 +5,10 @@ import com.rookies5.Backend_MATE.dto.request.LoginRequestDto;
 import com.rookies5.Backend_MATE.dto.request.UserRequestDto;
 import com.rookies5.Backend_MATE.dto.response.AuthResponseDto;
 import com.rookies5.Backend_MATE.dto.response.UserResponseDto;
+import com.rookies5.Backend_MATE.entity.User;
+import com.rookies5.Backend_MATE.exception.BusinessException;
+import com.rookies5.Backend_MATE.exception.ErrorCode;
+import com.rookies5.Backend_MATE.repository.UserRepository;
 import com.rookies5.Backend_MATE.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.security.core.Authentication;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,6 +28,7 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final UserRepository userRepository;
 
     /**
      * 1. 회원가입 (Signup)
@@ -118,11 +124,42 @@ public class AuthController {
     }
 
     /**
-     * 7. 로그아웃 (JWT 토큰 발급)
+     * 8. 로그아웃 (DB에서 리프레시 토큰 삭제 로직 추가)
      */
     @PostMapping("/logout")
-    public ResponseEntity<SuccessResponse<Void>> logout() {
-        // 서버는 저장한 게 없으니 지울 것도 없음!
-        return ResponseEntity.ok(new SuccessResponse<>("로그아웃 되었습니다.", null));
+    public ResponseEntity<SuccessResponse<Void>> logout(Authentication authentication) {
+        log.info("로그아웃 요청");
+
+        // 1. 헤더의 토큰을 통해 SecurityContext에 저장된 유저 이메일(또는 ID)을 가져옴
+        String email = authentication.getName();
+
+        // 2. 이메일로 유저 엔티티를 찾아서 ID 획득
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        // 3. 서비스 로직 호출 (DB에서 해당 유저의 리프레시 토큰 삭제)
+        authService.logout(user.getId());
+
+        return ResponseEntity.ok(new SuccessResponse<>("로그아웃이 성공적으로 완료되었습니다.", null));
+    }
+
+    /**
+     * 9. 토큰 재발급 API (새로 추가)
+     */
+    @PostMapping("/refresh")
+    public ResponseEntity<SuccessResponse<AuthResponseDto>> refresh(@RequestBody Map<String, String> request) {
+        log.info("토큰 재발급 요청");
+
+        String refreshToken = request.get("refreshToken");
+
+        // 토큰이 아예 안 넘어왔을 때의 예외 처리
+        if (refreshToken == null || refreshToken.trim().isEmpty()) {
+            throw new BusinessException(ErrorCode.REQUIRED_FIELD_MISSING);
+        }
+
+        // 서비스 호출하여 새 토큰이 담긴 DTO 받아오기
+        AuthResponseDto responseDto = authService.refresh(refreshToken);
+
+        return ResponseEntity.ok(new SuccessResponse<>("토큰이 성공적으로 재발급되었습니다.", responseDto));
     }
 }

@@ -3,11 +3,13 @@ package com.rookies5.Backend_MATE.service.impl;
 import com.rookies5.Backend_MATE.dto.request.UserRequestDto;
 import com.rookies5.Backend_MATE.dto.response.AuthResponseDto;
 import com.rookies5.Backend_MATE.dto.response.UserResponseDto;
+import com.rookies5.Backend_MATE.entity.RefreshToken;
 import com.rookies5.Backend_MATE.entity.User;
 import com.rookies5.Backend_MATE.exception.BusinessException;
 import com.rookies5.Backend_MATE.exception.EntityNotFoundException;
 import com.rookies5.Backend_MATE.exception.ErrorCode;
 import com.rookies5.Backend_MATE.mapper.UserMapper;
+import com.rookies5.Backend_MATE.repository.RefreshTokenRepository;
 import com.rookies5.Backend_MATE.repository.UserRepository;
 import com.rookies5.Backend_MATE.security.JwtTokenProvider;
 import com.rookies5.Backend_MATE.service.AuthService;
@@ -34,8 +36,9 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
+    private final RefreshTokenRepository refreshTokenRepository;
 
-    // ✨ 추가: 이미지가 저장될 실제 경로 (내 컴퓨터 사용자 폴더 하위)
+    // 이미지가 저장될 실제 경로 (내 컴퓨터 사용자 폴더 하위)
     private final String uploadPath = System.getProperty("user.home") + "/mate_uploads/profiles/";
 
     /**
@@ -51,7 +54,7 @@ public class AuthServiceImpl implements AuthService {
         String encodedPassword = passwordEncoder.encode(requestDto.getPassword());
         requestDto.setPassword(encodedPassword);
 
-        // ✨ 이미지 처리 로직 수정됨
+        // 이미지 처리 로직 수정됨
         if (profileImage != null && !profileImage.isEmpty()) {
             try {
                 // 1. 폴더 생성 (없으면 자동 생성)
@@ -93,7 +96,7 @@ public class AuthServiceImpl implements AuthService {
      * 2. 로그인 및 토큰 발급 (Security 버전 유지)
      */
     @Override
-    @Transactional(readOnly = true)
+    @Transactional // (주의) DB 쓰기 작업이 생겼으니 readOnly = true 지우거나 그냥 @Transactional 로 변경!
     public AuthResponseDto login(String email, String password) {
         try {
             UsernamePasswordAuthenticationToken authenticationToken =
@@ -105,6 +108,14 @@ public class AuthServiceImpl implements AuthService {
 
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+            // [추가] Refresh Token DB 저장 로직
+            // 이미 이 유저의 토큰이 있으면 덮어쓰고, 없으면 새로 생성해서 저장합니다.
+            refreshTokenRepository.findByUserId(user.getId())
+                    .ifPresentOrElse(
+                            token -> token.updateToken(refreshToken), // 있으면 값 업데이트 (더티 체킹)
+                            () -> refreshTokenRepository.save(new RefreshToken(user.getId(), refreshToken)) // 없으면 새로 저장
+                    );
 
             return AuthResponseDto.builder()
                     .accessToken(accessToken)
@@ -202,6 +213,58 @@ public class AuthServiceImpl implements AuthService {
 
         // Controller 버전의 필수 로직: 생성된 임시 비밀번호를 화면에 보여주기 위해 평문 반환
         return tempPassword;
+    }
+
+    /**
+     * ✨ 추가: 토큰 재발급 로직 (Access Token 만료 시)
+     */
+    @Override
+    @Transactional
+    public AuthResponseDto refresh(String refreshToken) {
+        // 1. DB에 해당 토큰이 존재하는지 검증
+        RefreshToken tokenEntity = refreshTokenRepository.findByTokenValue(refreshToken)
+                .orElseThrow(() -> new BusinessException(ErrorCode.AUTH_TOKEN_INVALID)); // "유효하지 않은 토큰입니다" 에러
+
+        // 2. JWT 자체의 유효성 검증 (만료일이 지났는지 등)
+        if (!jwtTokenProvider.validateToken(refreshToken)) {
+            // 만료되었다면 DB에서도 지워버림 (다시 로그인하게 유도)
+            refreshTokenRepository.delete(tokenEntity);
+            throw new BusinessException(ErrorCode.AUTH_TOKEN_EXPIRED); // "만료된 토큰입니다" 에러
+        }
+
+        // 3. 토큰 주인의 정보 찾기
+        User user = userRepository.findById(tokenEntity.getUserId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        // 4. 새로운 Access Token 발급 (기존 메서드 활용)
+        // 주의: 이 부분은 jwtTokenProvider의 로직에 따라 매개변수를 user나 authentication으로 맞춰주어야 합니다!
+        Authentication authentication = new UsernamePasswordAuthenticationToken(user.getEmail(), null, null);
+        String newAccessToken = jwtTokenProvider.createAccessToken(authentication);
+
+        // 5. 결과 반환 (Refresh Token은 그대로 유지하거나, 새로 발급해서 DB 업데이트 할 수도 있음. 여기선 유지하는 방식)
+        return AuthResponseDto.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(refreshToken)
+                .tokenType("Bearer")
+                .expiresIn(3600)
+                .user(AuthResponseDto.UserInfo.builder()
+                        .id(user.getId())
+                        .nickname(user.getNickname())
+                        .email(user.getEmail())
+                        .position(user.getPosition() != null ? user.getPosition().name() : null)
+                        .build())
+                .build();
+    }
+
+    /**
+     *  로그아웃 (리프레시 토큰 삭제)
+     */
+    @Override
+    @Transactional
+    public void logout(Long userId) {
+        // DB에서 해당 유저의 리프레시 토큰을 삭제하여 더 이상 토큰 갱신을 못하게 막음
+        refreshTokenRepository.deleteByUserId(userId);
+        log.info("유저 ID: {} 로그아웃 및 리프레시 토큰 삭제 완료", userId);
     }
 
     private String generateTempPassword() {
