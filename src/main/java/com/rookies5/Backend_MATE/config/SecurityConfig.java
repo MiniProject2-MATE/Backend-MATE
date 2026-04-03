@@ -1,14 +1,14 @@
 package com.rookies5.Backend_MATE.config;
 
-import com.rookies5.Backend_MATE.security.*;
+import com.rookies5.Backend_MATE.security.JwtAccessDeniedHandler;
+import com.rookies5.Backend_MATE.security.JwtAuthenticationEntryPoint;
+import com.rookies5.Backend_MATE.security.JwtAuthenticationFilter;
+import com.rookies5.Backend_MATE.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
-import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -18,17 +18,21 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
-@Order(2)
 public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
-    private final CustomUserDetailsService customUserDetailsService;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -36,42 +40,74 @@ public class SecurityConfig {
     }
 
     @Bean
-    @Primary
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
     @Bean
-    public DaoAuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(customUserDetailsService);
-        provider.setPasswordEncoder(passwordEncoder());
-        return provider;
-    }
-
-    @Bean
-    public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // 🔑 API 요청만 처리
-                .securityMatcher("/api/**")
+                // 💡 1. CORS 설정 활성화 (우리가 만든 corsConfigurationSource를 가져다 씁니다)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
                 .csrf(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
-                .authenticationProvider(authenticationProvider())
+
                 .exceptionHandling(exception -> exception
-                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
-                        .accessDeniedHandler(jwtAccessDeniedHandler)
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint) // 401 에러 처리
+                        .accessDeniedHandler(jwtAccessDeniedHandler) // 403 에러 처리
                 )
+
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
+
+                // API 명세서 기반 권한 맵핑
                 .authorizeHttpRequests(auth -> auth
+                        // GUEST (누구나 접근 가능 API)
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/posts", "/api/posts/{id}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users/check-phone", "/api/users/check-nickname").permitAll()
+
+                        // 💡 관리자 페이지(Thymeleaf) 접근 허용 (이전에 발생했던 302 리다이렉트 방지)
+                        .requestMatchers("/admin/signup", "/admin/login").permitAll()
+
+                        // ADMIN (관리자 전용 API)
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+
+                        // 나머지 모든 요청은 USER 이상 (토큰 필수)
                         .anyRequest().authenticated()
                 );
 
         return http.build();
+    }
+
+    // 💡 2. 프론트엔드 연결을 위한 CORS 세부 규칙 정의
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        // 프론트엔드 주소 허용
+        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+
+        // 허용할 HTTP 메서드 (GET, POST 등)
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+
+        // 허용할 헤더 (모든 헤더 허용)
+        configuration.setAllowedHeaders(List.of("*"));
+
+        // 프론트엔드에서 응답 헤더의 Authorization 값을 읽을 수 있도록 노출 허용
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
+
+        // 쿠키나 인증 정보(JWT)를 포함한 요청 허용 (true 필수)
+        configuration.setAllowCredentials(true);
+
+        // 모든 API 경로(/**)에 대해 위에서 설정한 규칙을 적용
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+
+        return source;
     }
 }

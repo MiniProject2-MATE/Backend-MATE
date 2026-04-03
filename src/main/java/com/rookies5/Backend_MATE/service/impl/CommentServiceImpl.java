@@ -5,13 +5,14 @@ import com.rookies5.Backend_MATE.dto.response.CommentResponseDto;
 import com.rookies5.Backend_MATE.entity.BoardPost;
 import com.rookies5.Backend_MATE.entity.Comment;
 import com.rookies5.Backend_MATE.entity.User;
+import com.rookies5.Backend_MATE.exception.BusinessException;
 import com.rookies5.Backend_MATE.exception.EntityNotFoundException;
 import com.rookies5.Backend_MATE.exception.ErrorCode;
-import com.rookies5.Backend_MATE.exception.BusinessException;
 import com.rookies5.Backend_MATE.mapper.CommentMapper;
 import com.rookies5.Backend_MATE.repository.BoardPostRepository;
 import com.rookies5.Backend_MATE.repository.CommentRepository;
 import com.rookies5.Backend_MATE.repository.UserRepository;
+import com.rookies5.Backend_MATE.security.SecurityUtils;
 import com.rookies5.Backend_MATE.service.CommentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -77,10 +78,11 @@ public class CommentServiceImpl implements CommentService {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.COMMENT_NOT_FOUND, commentId));
 
-        // 추후 추가할 비즈니스 로직: 요청한 사용자가 실제 댓글 작성자인지 권한 검증
-        // if (!comment.getAuthor().getId().equals(requestDto.getAuthorId())) {
-        //     throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED, "댓글 수정 권한이 없습니다.");
-        // }
+        // 권한 검증: 요청한 사용자가 실제 댓글 작성자인지 확인
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        if (!comment.getAuthor().getId().equals(currentUserId)) {
+            throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED, "댓글 수정 권한이 없습니다.");
+        }
 
         // Dirty Checking: 댓글 내용 업데이트
         comment.updateComment(requestDto.getContent());
@@ -97,10 +99,14 @@ public class CommentServiceImpl implements CommentService {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.COMMENT_NOT_FOUND, commentId));
 
-        // 추후 추가할 비즈니스 로직: 요청한 사용자가 실제 댓글 작성자이거나 게시글의 방장인지 권한 검증
-        // if (!comment.getAuthor().getId().equals(currentUserId)) {
-        //     throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED, "댓글 삭제 권한이 없습니다.");
-        // }
+        // 권한 검증: 댓글 작성자 본인이거나 해당 프로젝트의 방장인 경우에만 삭제 가능
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        boolean isAuthor = comment.getAuthor().getId().equals(currentUserId);
+        boolean isProjectOwner = comment.getPost().getProject().getOwner().getId().equals(currentUserId);
+
+        if (!isAuthor && !isProjectOwner) {
+            throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED, "댓글 삭제 권한이 없습니다.");
+        }
 
         commentRepository.delete(comment);
     }
