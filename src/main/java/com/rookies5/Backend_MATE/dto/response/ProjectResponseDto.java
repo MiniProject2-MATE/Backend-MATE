@@ -6,6 +6,7 @@ import com.rookies5.Backend_MATE.entity.enums.ProjectStatus;
 import lombok.Builder;
 import lombok.Getter;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Builder
@@ -25,6 +26,7 @@ public class ProjectResponseDto {
 
     private LocalDate endDate;
     private Long remainingDays;
+    private LocalDateTime createdAt;
 
     // --- 활동 이력 구분을 위해 추가된 필드 ---
     private boolean isOwner;      // 내가 방장인지 여부 (프론트 버튼 제어용)

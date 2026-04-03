@@ -1,5 +1,6 @@
 package com.rookies5.Backend_MATE.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.rookies5.Backend_MATE.entity.BaseEntity;
 import com.rookies5.Backend_MATE.entity.enums.Position;
 import com.rookies5.Backend_MATE.entity.enums.UserRole;
@@ -66,6 +67,7 @@ public class User extends BaseEntity {
 
     @Builder.Default
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL)
+    @JsonIgnore
     private List<Project> myProjects = new ArrayList<>();
 
     public void updatePassword(String encodedPassword) {
