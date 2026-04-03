@@ -9,8 +9,6 @@ import com.rookies5.Backend_MATE.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,33 +23,37 @@ public class UserController {
     private final UserService userService;
 
     /**
-     * 추가: 전체 회원 조회 (관리자용 등)
-     * GET /api/users
+     * 0. 전체 회원 조회 (관리자용 등)
      */
     @GetMapping
-    public ResponseEntity<List<UserResponseDto>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
+    public SuccessResponse<List<UserResponseDto>> getAllUsers() {
+        log.info("전체 회원 조회 요청");
+        List<UserResponseDto> users = userService.getAllUsers();
+        return new SuccessResponse<>("전체 회원 조회가 완료되었습니다.", users);
     }
-
 
     /**
      * 1. 내 정보 상세 조회
      */
     @GetMapping("/{userId}")
-    public ResponseEntity<UserResponseDto> getUserProfile(@PathVariable Long userId) {
-        return ResponseEntity.ok(userService.getUserById(userId));
+    public SuccessResponse<UserResponseDto> getUserProfile(@PathVariable Long userId) {
+        log.info("유저 상세 조회 요청 - ID: {}", userId);
+        UserResponseDto user = userService.getUserById(userId);
+        return new SuccessResponse<>("유저 정보 조회가 완료되었습니다.", user);
     }
 
     /**
      * 2. 내 정보 수정
      */
     @PutMapping("/{userId}")
-    public ResponseEntity<UserResponseDto> updateUser(@PathVariable Long userId, @RequestBody UserRequestDto requestDto) {
-        return ResponseEntity.ok(userService.updateUser(userId, requestDto));
+    public SuccessResponse<UserResponseDto> updateUser(@PathVariable Long userId, @RequestBody UserRequestDto requestDto) {
+        log.info("유저 정보 수정 요청 - ID: {}", userId);
+        UserResponseDto updatedUser = userService.updateUser(userId, requestDto);
+        return new SuccessResponse<>("유저 정보가 성공적으로 수정되었습니다.", updatedUser);
     }
 
     /**
-     * 3. 프로필 이미지 수정 (지호님 패턴 맞춤 적용)
+     * 3. 프로필 이미지 수정
      */
     @PatchMapping(value = "/profile-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public SuccessResponse<String> updateProfileImage(
@@ -68,41 +70,41 @@ public class UserController {
      * 4. 프로필 이미지 삭제 (기본 이미지로 복구)
      */
     @DeleteMapping("/profile-image")
-    public SuccessResponse<Void> deleteProfileImage(
-            @RequestParam("userId") Long userId) {
-
+    public SuccessResponse<Void> deleteProfileImage(@RequestParam("userId") Long userId) {
         log.info("프로필 이미지 삭제 요청 - 유저 ID: {}", userId);
         userService.deleteProfileImage(userId);
-
         return new SuccessResponse<>("프로필 이미지가 기본 이미지로 초기화되었습니다.");
     }
 
     // --- 마이페이지 활동 이력 3종 세트 ---
 
     /**
-     * 4. 내 모집글 조회 (내가 방장인 것)
-     * GET /api/users/{userId}/posts/owned
+     * 5. 내 모집글 조회 (내가 방장인 것)
      */
     @GetMapping("/{userId}/posts/owned")
-    public ResponseEntity<List<ProjectResponseDto>> getMyOwnedPosts(@PathVariable Long userId) {
-        return ResponseEntity.ok(userService.getMyOwnedPosts(userId));
+    public SuccessResponse<List<ProjectResponseDto>> getMyOwnedPosts(@PathVariable Long userId) {
+        log.info("내가 작성한 모집글 조회 - 유저 ID: {}", userId);
+        List<ProjectResponseDto> projects = userService.getMyOwnedPosts(userId);
+        return new SuccessResponse<>("내가 작성한 모집글 조회가 완료되었습니다.", projects);
     }
 
     /**
-     * 5. 참여 중인 프로젝트/스터디 조회 (승인 완료)
-     * GET /api/users/{userId}/posts/joined
+     * 6. 참여 중인 프로젝트/스터디 조회 (승인 완료)
      */
     @GetMapping("/{userId}/posts/joined")
-    public ResponseEntity<List<ProjectResponseDto>> getMyJoinedProjects(@PathVariable Long userId) {
-        return ResponseEntity.ok(userService.getMyJoinedProjects(userId));
+    public SuccessResponse<List<ProjectResponseDto>> getMyJoinedProjects(@PathVariable Long userId) {
+        log.info("참여 중인 프로젝트 조회 - 유저 ID: {}", userId);
+        List<ProjectResponseDto> projects = userService.getMyJoinedProjects(userId);
+        return new SuccessResponse<>("참여 중인 프로젝트 조회가 완료되었습니다.", projects);
     }
 
     /**
-     * 6. 내 신청 현황 조회 (대기/거절 상태)
-     * GET /api/users/{userId}/applications/pending
+     * 7. 내 신청 현황 조회 (대기/거절 상태)
      */
     @GetMapping("/{userId}/applications/pending")
-    public ResponseEntity<List<ApplicationResponseDto>> getMyPendingApplications(@PathVariable Long userId) {
-        return ResponseEntity.ok(userService.getMyPendingApplications(userId));
+    public SuccessResponse<List<ApplicationResponseDto>> getMyPendingApplications(@PathVariable Long userId) {
+        log.info("내 신청 현황 조회 - 유저 ID: {}", userId);
+        List<ApplicationResponseDto> applications = userService.getMyPendingApplications(userId);
+        return new SuccessResponse<>("내 신청 현황 조회가 완료되었습니다.", applications);
     }
 }
