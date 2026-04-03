@@ -20,6 +20,7 @@ import com.rookies5.Backend_MATE.service.ApplicationService;
 import com.rookies5.Backend_MATE.service.ProjectService;
 import com.rookies5.Backend_MATE.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -30,11 +31,13 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Slf4j
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final ProjectService projectService;
     private final ApplicationService applicationService;
+    private final String uploadPath = System.getProperty("user.home") + "/mate_uploads/profiles/";
 
     private static final String DEFAULT_PROFILE_IMG = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
 
@@ -137,28 +140,92 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
-     * 7. 프로필 이미지 수정
+     * 7. 프로필 이미지 수정 (로컬 저장 방식 적용)
      */
     @Override
     public String updateProfileImage(Long userId, MultipartFile profileImage) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.USER_NOT_FOUND, userId));
 
-        // TODO: S3 업로드 로직으로 교체 예정
-        String newImgUrl = "https://mate-s3.com/new-profile-" + userId + ".png";
-        user.updateProfileImg(newImgUrl);
-        return newImgUrl;
+        if (profileImage == null || profileImage.isEmpty()) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR);
+        }
+
+        try {
+            // 1. 기존 파일 삭제 로직 (추가된 부분)
+            String oldImgUrl = user.getProfileImg();
+            // 기본 이미지(Pixabay 등)가 아니고, 우리가 저장한 로컬 경로일 때만 삭제
+            if (oldImgUrl != null && oldImgUrl.startsWith("/uploads/profiles/")) {
+                // DB 경로 "/uploads/profiles/uuid.jpg"에서 파일명만 추출
+                String oldFileName = oldImgUrl.replace("/uploads/profiles/", "");
+                java.io.File oldFile = new java.io.File(uploadPath + oldFileName);
+
+                if (oldFile.exists()) {
+                    oldFile.delete(); // 실제 파일 삭제
+                    log.info("기존 프로필 이미지 삭제 완료: {}", oldFileName);
+                }
+            }
+
+            // 2. 폴더 확인 및 생성
+            java.io.File folder = new java.io.File(uploadPath);
+            if (!folder.exists()) folder.mkdirs();
+
+            // 3. 새 파일명 생성 (UUID)
+            String originalFilename = profileImage.getOriginalFilename();
+            String extension = (originalFilename != null && originalFilename.contains("."))
+                    ? originalFilename.substring(originalFilename.lastIndexOf(".")) : "";
+            String storeFilename = java.util.UUID.randomUUID().toString() + extension;
+
+            // 4. 새 파일 저장
+            profileImage.transferTo(new java.io.File(uploadPath + storeFilename));
+
+            // 5. DB 업데이트
+            String newImgUrl = "/uploads/profiles/" + storeFilename;
+            user.updateProfileImg(newImgUrl);
+
+            return newImgUrl;
+
+        } catch (java.io.IOException e) {
+            log.error("파일 처리 중 오류 발생: {}", e.getMessage());
+            throw new BusinessException(ErrorCode.FILE_UPLOAD_ERROR);
+        }
     }
 
     /**
-     * 8. 프로필 이미지 삭제 (기본 이미지로 복구)
+     * 8. 프로필 이미지 삭제 (서버 파일 삭제 + 기본 이미지로 복구)
      */
     @Override
     public void deleteProfileImage(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.USER_NOT_FOUND, userId));
 
+        // 1. 기존에 저장된 '실제 파일'이 있다면 삭제 시도
+        String currentImgUrl = user.getProfileImg();
+
+        // 우리가 저장한 로컬 경로(/uploads/profiles/)인 경우에만 파일을 지웁니다.
+        if (currentImgUrl != null && currentImgUrl.startsWith("/uploads/profiles/")) {
+            try {
+                // 경로에서 파일명만 추출 (예: uuid.jpg)
+                String fileName = currentImgUrl.replace("/uploads/profiles/", "");
+                java.io.File fileToDelete = new java.io.File(uploadPath + fileName);
+
+                if (fileToDelete.exists()) {
+                    if (fileToDelete.delete()) {
+                        log.info("기존 프로필 이미지 파일 삭제 성공: {}", fileName);
+                    } else {
+                        log.warn("파일 삭제 실패 (권한 문제 등): {}", fileName);
+                    }
+                }
+            } catch (Exception e) {
+                log.error("파일 삭제 중 예상치 못한 오류 발생: {}", e.getMessage());
+                // 파일 삭제 실패가 비즈니스 로직을 멈출 정도는 아니므로 예외를 던지지는 않습니다.
+            }
+        }
+
+        // 2. DB 정보는 기본 이미지 URL로 변경
         user.updateProfileImg(DEFAULT_PROFILE_IMG);
+
+        log.info("유저(ID: {})의 프로필 이미지가 기본 이미지로 초기화되었습니다.", userId);
     }
 
     /**

@@ -116,4 +116,13 @@ public class AuthController {
 
         return ResponseEntity.ok(responseDto);
     }
+
+    /**
+     * 7. 로그아웃 (JWT 토큰 발급)
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<SuccessResponse<Void>> logout() {
+        // 서버는 저장한 게 없으니 지울 것도 없음!
+        return ResponseEntity.ok(new SuccessResponse<>("로그아웃 되었습니다.", null));
+    }
 }
