@@ -3,85 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <title>관리자 로그인</title>
-
     <style>
-        body {
-            margin:0;
-            font-family:Arial;
-            background:#f1f5f9;
-            display:flex;
-            justify-content:center;
-            align-items:center;
-            height:100vh;
-        }
-
-        .login-box {
-            background:white;
-            padding:40px;
-            border-radius:10px;
-            width:350px;
-            box-shadow:0 10px 30px rgba(0,0,0,0.1);
-            text-align:center;
-        }
-
-        .title {
-            font-size:20px;
-            font-weight:bold;
-            margin-bottom:20px;
-        }
-
-        input {
-            width:100%;
-            padding:10px;
-            margin-bottom:15px;
-            border-radius:5px;
-            border:1px solid #ddd;
-        }
-
-        button {
-            width:100%;
-            padding:10px;
-            background:#6366f1;
-            color:white;
-            border:none;
-            border-radius:5px;
-            cursor:pointer;
-        }
-
-        .error {
-            color:red;
-            margin-bottom:10px;
-        }
-
-        .logout {
-            color:green;
-            margin-bottom:10px;
-        }
+        body { font-family: Arial; background: #f1f5f9; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; }
+        .login-box { background:white; padding:40px; border-radius:10px; box-shadow:0 16px 32px rgba(0,0,0,0.1); width:320px; }
+        h2 { text-align:center; margin-bottom:30px; color:#1e293b; }
+        input { width:100%; padding:12px; margin-bottom:15px; border-radius:5px; border:1px solid #ccc; }
+        button { width:100%; padding:12px; border:none; border-radius:5px; background:#6366f1; color:white; font-weight:bold; cursor:pointer; }
+        .error { color:red; margin-bottom:10px; text-align:center; }
     </style>
 </head>
-
 <body>
-
 <div class="login-box">
-    <div class="title">관리자 로그인</div>
+    <h2>관리자 로그인</h2>
 
-    <!-- 로그인 실패 -->
-    <div class="error" th:if="${param.error}">
-        아이디 또는 비밀번호가 잘못되었습니다.
+    <!-- 로그인 실패 시 error 파라미터 표시 -->
+    <div th:if="${param.error}" class="error">
+        이메일 또는 비밀번호가 잘못되었습니다.
     </div>
-
-    <!-- 로그아웃 메시지 -->
-    <div class="logout" th:if="${param.logout}">
-        로그아웃되었습니다.
+    <div th:if="${param.logout}" style="color:green; text-align:center; margin-bottom:10px;">
+        로그아웃 되었습니다.
     </div>
 
     <form th:action="@{/admin/login}" method="post">
-        <input type="text" name="admin" placeholder="아이디 입력" required>
+        <input type="text" name="admin" placeholder="이메일 입력" required>
         <input type="password" name="1234" placeholder="비밀번호 입력" required>
-
         <button type="submit">로그인</button>
     </form>
 </div>
-
 </body>
 </html>
