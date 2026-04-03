@@ -96,72 +96,71 @@ public class AuthController {
     }
 
     /**
-     * 5. 아이디(이메일) 찾기
+     * 5. 아이디(이메일) 찾기 - 규격 통일
      */
     @GetMapping("/find-email")
-    public ResponseEntity<String> findEmail(@RequestParam String phoneNumber) {
-        return ResponseEntity.ok(authService.findEmailByPhoneNumber(phoneNumber));
+    public SuccessResponse<String> findEmail(@RequestParam String phoneNumber) {
+        log.info("이메일 찾기 요청: {}", phoneNumber);
+        String email = authService.findEmailByPhoneNumber(phoneNumber);
+
+        return new SuccessResponse<>("이메일 찾기에 성공하였습니다.", email);
     }
 
     /**
-     * 6. 비밀번호 재설정 (임시 비번 발급)
+     * 6. 비밀번호 재설정 (임시 비번 발급) - 규격 통일
      */
     @PostMapping("/reset-password")
-    public ResponseEntity<String> resetPassword(@RequestParam String email, @RequestParam String phoneNumber) {
+    public SuccessResponse<String> resetPassword(@RequestParam String email, @RequestParam String phoneNumber) {
+        log.info("비밀번호 재설정 요청: {}", email);
         String newPassword = authService.resetPassword(email, phoneNumber);
-        return ResponseEntity.ok(newPassword);
+
+        return new SuccessResponse<>("임시 비밀번호가 발급되었습니다. 로그인 후 비밀번호를 변경해 주세요.", newPassword);
     }
 
     /**
-     * 7. 로그인 (JWT 토큰 발급)
+     * 7. 로그인 (JWT 토큰 발급) - 규격 통일
      */
     @PostMapping("/login")
-    public ResponseEntity<AuthResponseDto> login(@RequestBody @Valid LoginRequestDto requestDto) {
+    public SuccessResponse<AuthResponseDto> login(@RequestBody @Valid LoginRequestDto requestDto) {
         log.info("로그인 요청: {}", requestDto.getEmail());
 
-        // 서비스의 login 메서드를 호출해서 토큰이 담긴 AuthResponseDto를 받아옵니다.
         AuthResponseDto responseDto = authService.login(requestDto.getEmail(), requestDto.getPassword());
 
-        return ResponseEntity.ok(responseDto);
+        return new SuccessResponse<>("로그인에 성공하였습니다.", responseDto);
     }
 
     /**
-     * 8. 로그아웃 (DB에서 리프레시 토큰 삭제 로직 추가)
+     * 8. 로그아웃 - 규격 통일
      */
     @PostMapping("/logout")
-    public ResponseEntity<SuccessResponse<Void>> logout(Authentication authentication) {
+    public SuccessResponse<Void> logout(Authentication authentication) {
         log.info("로그아웃 요청");
 
-        // 1. 헤더의 토큰을 통해 SecurityContext에 저장된 유저 이메일(또는 ID)을 가져옴
         String email = authentication.getName();
-
-        // 2. 이메일로 유저 엔티티를 찾아서 ID 획득
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        // 3. 서비스 로직 호출 (DB에서 해당 유저의 리프레시 토큰 삭제)
         authService.logout(user.getId());
 
-        return ResponseEntity.ok(new SuccessResponse<>("로그아웃이 성공적으로 완료되었습니다.", null));
+        // 데이터가 없을 때는 메시지만 담는 생성자 사용
+        return new SuccessResponse<>("로그아웃이 성공적으로 완료되었습니다.");
     }
 
     /**
-     * 9. 토큰 재발급 API (새로 추가)
+     * 9. 토큰 재발급 API - 규격 통일
      */
     @PostMapping("/refresh")
-    public ResponseEntity<SuccessResponse<AuthResponseDto>> refresh(@RequestBody Map<String, String> request) {
+    public SuccessResponse<AuthResponseDto> refresh(@RequestBody Map<String, String> request) {
         log.info("토큰 재발급 요청");
 
         String refreshToken = request.get("refreshToken");
 
-        // 토큰이 아예 안 넘어왔을 때의 예외 처리
         if (refreshToken == null || refreshToken.trim().isEmpty()) {
             throw new BusinessException(ErrorCode.REQUIRED_FIELD_MISSING);
         }
 
-        // 서비스 호출하여 새 토큰이 담긴 DTO 받아오기
         AuthResponseDto responseDto = authService.refresh(refreshToken);
 
-        return ResponseEntity.ok(new SuccessResponse<>("토큰이 성공적으로 재발급되었습니다.", responseDto));
+        return new SuccessResponse<>("토큰이 성공적으로 재발급되었습니다.", responseDto);
     }
 }
