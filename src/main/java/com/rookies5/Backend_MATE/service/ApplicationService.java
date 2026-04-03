@@ -12,7 +12,7 @@ public interface ApplicationService {
      * @param requestDto 지원 정보 (projectId, applicantId, message)
      * @return 생성된 지원서 정보
      */
-    ApplicationResponseDto applyToProject(ApplicationRequestDto requestDto);
+    ApplicationResponseDto applyToProject(Long projectId, Long applicantId, ApplicationRequestDto requestDto);
 
     /**
      * 특정 프로젝트의 지원자 목록 조회 (방장용)

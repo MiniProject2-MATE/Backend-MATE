@@ -37,8 +37,9 @@ public enum ErrorCode {
 
     // 지원서/매칭 관련 (40X, 422)
     APPLY_NOT_FOUND("APPLY_001", "지원서를 찾을 수 없습니다", HttpStatus.NOT_FOUND),
-    APPLY_DUPLICATE("APPLY_002", "이미 지원했다가 가입 거절된 프로젝트입니다", HttpStatus.CONFLICT),
+    APPLY_DUPLICATE("APPLY_002", "이미 지원했거나 가입 거절된 프로젝트입니다", HttpStatus.CONFLICT),
     APPLY_CANNOT_CANCEL("APPLY_003", "이미 처리된 지원서는 취소할 수 없습니다", HttpStatus.UNPROCESSABLE_ENTITY),
+    OWNER_CANNOT_APPLY("APPLY_004", "방장은 본인의 프로젝트에 지원할 수 없습니다", HttpStatus.BAD_REQUEST),
 
     // 멤버십 및 게시판 관련 (40X)
     MEMBER_NOT_FOUND("MEMBER_001", "해당 프로젝트의 팀원이 아닙니다", HttpStatus.NOT_FOUND),

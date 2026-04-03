@@ -77,7 +77,7 @@ public class BoardPostController {
     /**
      * 게시글 부분 수정 (PATCH)
      */
-    @PatchMapping("/{postId}")
+    @PatchMapping("/{projectId}/board/{postId}")
     public SuccessResponse<BoardPostResponseDto> patchPost(
             @PathVariable Long postId,
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -94,7 +94,7 @@ public class BoardPostController {
     /**
      * 게시글 삭제
      */
-    @DeleteMapping("/{postId}")
+    @DeleteMapping("/{projectId}/board/{postId}")
     public SuccessResponse<Void> deletePost(
             @PathVariable Long postId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {

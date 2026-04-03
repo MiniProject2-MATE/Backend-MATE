@@ -63,7 +63,7 @@ public class ProjectController {
     /**
      * 프로젝트 정보 부분 수정 (PATCH)
      */
-    @PatchMapping("/{projectId}") // 👈 PUT에서 PATCH로 변경!
+    @PatchMapping("/{projectId}")
     public SuccessResponse<ProjectResponseDto> patchProject(
             @PathVariable Long projectId,
             @AuthenticationPrincipal CustomUserDetails userDetails, // 👈 로그인 유저 정보 가져오기

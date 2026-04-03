@@ -3,10 +3,12 @@ package com.rookies5.Backend_MATE.controller;
 import com.rookies5.Backend_MATE.common.SuccessResponse;
 import com.rookies5.Backend_MATE.dto.request.ApplicationRequestDto;
 import com.rookies5.Backend_MATE.dto.response.ApplicationResponseDto;
+import com.rookies5.Backend_MATE.security.CustomUserDetails;
 import com.rookies5.Backend_MATE.service.ApplicationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,17 +23,23 @@ public class ApplicationController {
 
     /**
      * 1. 프로젝트 지원하기
-     * POST /api/applications
+     * POST /api/applications/{projectId}
      */
-    @PostMapping
+    @PostMapping("/{projectId}")
     public SuccessResponse<ApplicationResponseDto> applyToProject(
+            @PathVariable Long projectId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody ApplicationRequestDto requestDto) {
-        log.info("프로젝트 지원 요청 - projectId: {}, applicantId: {}",
-                requestDto.getProjectId(), requestDto.getApplicantId());
-        ApplicationResponseDto responseDto = applicationService.applyToProject(requestDto);
+
+        Long applicantId = userDetails.getId();
+
+        log.info("프로젝트 지원 요청 - projectId: {}, applicantId(from Token): {}", projectId, applicantId);
+
+        // 서비스에는 여전히 ID 값들을 던져줌
+        ApplicationResponseDto responseDto = applicationService.applyToProject(projectId, applicantId, requestDto);
+
         return new SuccessResponse<>("지원이 완료되었습니다.", responseDto);
     }
-
     /**
      * 2. 특정 프로젝트의 지원자 목록 조회 (방장용)
      * GET /api/applications/projects/{projectId}

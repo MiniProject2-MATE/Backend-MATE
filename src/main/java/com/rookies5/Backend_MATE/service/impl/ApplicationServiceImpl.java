@@ -40,21 +40,37 @@ public class ApplicationServiceImpl implements ApplicationService {
      * 1. 프로젝트 지원하기
      */
     @Override
-    public ApplicationResponseDto applyToProject(ApplicationRequestDto requestDto) {
-        Project project = projectRepository.findById(requestDto.getProjectId())
-                .orElseThrow(() -> new EntityNotFoundException(ErrorCode.PROJECT_NOT_FOUND, requestDto.getProjectId()));
-
-        User applicant = userRepository.findById(requestDto.getApplicantId())
-                .orElseThrow(() -> new EntityNotFoundException(ErrorCode.USER_NOT_FOUND, requestDto.getApplicantId()));
+    @Transactional
+    public ApplicationResponseDto applyToProject(Long projectId, Long applicantId, ApplicationRequestDto requestDto) {
+        // 1. 프로젝트 존재 여부 및 상태 확인
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new EntityNotFoundException(ErrorCode.PROJECT_NOT_FOUND, projectId));
 
         if (project.getStatus() == ProjectStatus.CLOSED) {
             throw new BusinessException(ErrorCode.PROJECT_CLOSED);
         }
 
-        if (applicationRepository.existsByProjectIdAndApplicantId(project.getId(), applicant.getId())) {
+        // 2. [추가] 방장 본인인지 확인
+        if (project.getOwner().getId().equals(applicantId)) {
+            throw new BusinessException(ErrorCode.OWNER_CANNOT_APPLY, "방장은 본인의 프로젝트에 지원할 수 없습니다.");
+        }
+
+        // 2. 지원자 존재 여부 확인
+        User applicant = userRepository.findById(applicantId)
+                .orElseThrow(() -> new EntityNotFoundException(ErrorCode.USER_NOT_FOUND, applicantId));
+
+        // 3. [보안/비즈니스] 이미 해당 프로젝트의 멤버인지 확인
+        boolean isMember = projectMemberRepository.existsByProjectIdAndUserId(projectId, applicantId);
+        if (isMember) {
+            throw new BusinessException(ErrorCode.APPLY_DUPLICATE, "이미 프로젝트에 참여 중인 멤버입니다.");
+        }
+
+        // 4. 중복 지원 여부 확인
+        if (applicationRepository.existsByProjectIdAndApplicantId(projectId, applicantId)) {
             throw new BusinessException(ErrorCode.APPLY_DUPLICATE);
         }
 
+        // 5. 엔티티 변환 및 저장 (매퍼 메서드에 ID가 아닌 객체를 직접 전달)
         Application application = ApplicationMapper.mapToEntity(requestDto, project, applicant);
         Application savedApplication = applicationRepository.save(application);
 

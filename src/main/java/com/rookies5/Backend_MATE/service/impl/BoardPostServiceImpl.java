@@ -35,28 +35,36 @@ public class BoardPostServiceImpl implements BoardPostService {
      */
     @Override
     public BoardPostResponseDto createPost(Long userId, BoardPostRequestDto requestDto) {
+        // 1. 프로젝트 존재 확인
         Project project = projectRepository.findById(requestDto.getProjectId())
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.PROJECT_NOT_FOUND, requestDto.getProjectId()));
 
-        // 수정: authorId 대신 토큰에서 넘어온 userId로 유저 조회
+        // 2. [추가] 프로젝트 멤버 권한 검증 (중요!)
+        validateProjectMember(project.getId(), userId);
+
+        // 3. 유저 조회
         User author = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.USER_NOT_FOUND, userId));
 
         BoardPost post = BoardPostMapper.mapToEntity(requestDto, project, author);
         BoardPost savedPost = boardPostRepository.save(post);
 
-        // 수정: userId를 함께 넘겨줍니다.
         return BoardPostMapper.mapToResponse(savedPost, userId);
     }
 
     /**
      * 특정 프로젝트의 모든 게시글 조회 (최신순)
+     * - 프로젝트 멤버만 조회 가능하도록 검증 추가
      */
     @Transactional(readOnly = true)
     @Override
     public List<BoardPostResponseDto> getPostsByProjectId(Long projectId, Long userId) {
+        // 1. [공통 검증 호출] 이 유저가 멤버인지 확인 (아니면 예외 발생)
+        validateProjectMember(projectId, userId);
+
+        // 2. 검증 통과 시 게시글 목록 조회 진행
         return boardPostRepository.findAllByProjectIdOrderByCreatedAtDesc(projectId).stream()
-                .map(post -> BoardPostMapper.mapToResponse(post, userId)) // 람다식으로 userId 전달
+                .map(post -> BoardPostMapper.mapToResponse(post, userId))
                 .collect(Collectors.toList());
     }
 
@@ -66,20 +74,18 @@ public class BoardPostServiceImpl implements BoardPostService {
     @Override
     @Transactional
     public BoardPostResponseDto patchPost(Long postId, Long userId, BoardPostRequestDto requestDto) {
-        // 1. 게시글 존재 확인
         BoardPost post = boardPostRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.BOARD_NOT_FOUND, postId));
 
-        // 2. [보안] 작성자 권한 검증 (중요!)
-        // post.getAuthor() 또는 post.getUser() 등 지호 님의 필드명에 맞춰주세요.
+        // [추가] 프로젝트 멤버인지 먼저 확인 (프로젝트에서 쫓겨난 유저 방지)
+        validateProjectMember(post.getProject().getId(), userId);
+
+        // 본인 확인
         if (!post.getAuthor().getId().equals(userId)) {
             throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED);
         }
 
-        // 3. 엔티티 내부의 부분 업데이트 호출
         post.updatePost(requestDto);
-
-        // 4. 결과 반환 (필요시 userId를 넘겨서 작성자 여부 확인)
         return BoardPostMapper.mapToResponse(post, userId);
     }
 
@@ -91,7 +97,10 @@ public class BoardPostServiceImpl implements BoardPostService {
         BoardPost post = boardPostRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.BOARD_NOT_FOUND, postId));
 
-        // 수정: 본인 확인 로직 추가
+        // [추가] 프로젝트 멤버 확인
+        validateProjectMember(post.getProject().getId(), userId);
+
+        // 본인 확인
         if (!post.getAuthor().getId().equals(userId)) {
             throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED);
         }
@@ -120,10 +129,17 @@ public class BoardPostServiceImpl implements BoardPostService {
         }
 
         // 4. 조회수 증가 로직
-        // (무한 새로고침 방지는 추후 Redis/Cookie로 고도화 가능, 현재는 단순 1 증가)
         post.incrementViewCount();
 
         // 5. DTO 변환 후 반환 (기존 BoardPostMapper.mapToResponse 그대로 활용)
         return BoardPostMapper.mapToResponse(post, userId);
+    }
+
+    // --- 공통 검증 메서드 추출 ---
+    private void validateProjectMember(Long projectId, Long userId) {
+        boolean isMember = projectMemberRepository.existsByProjectIdAndUserId(projectId, userId);
+        if (!isMember) {
+            throw new AccessDeniedException(ErrorCode.AUTH_ACCESS_DENIED, "해당 프로젝트의 멤버가 아닙니다.");
+        }
     }
 }
