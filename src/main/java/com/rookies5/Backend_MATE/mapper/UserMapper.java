@@ -17,6 +17,7 @@ public class UserMapper {
                 .position(user.getPosition())
                 .techStacks(user.getTechStacks())
                 .profileImg(user.getProfileImg())
+                .createdAt(user.getCreatedAt())
                 .build();
     }
 

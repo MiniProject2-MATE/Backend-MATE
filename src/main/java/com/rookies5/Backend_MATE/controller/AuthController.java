@@ -5,6 +5,10 @@ import com.rookies5.Backend_MATE.dto.request.LoginRequestDto;
 import com.rookies5.Backend_MATE.dto.request.UserRequestDto;
 import com.rookies5.Backend_MATE.dto.response.AuthResponseDto;
 import com.rookies5.Backend_MATE.dto.response.UserResponseDto;
+import com.rookies5.Backend_MATE.entity.User;
+import com.rookies5.Backend_MATE.exception.BusinessException;
+import com.rookies5.Backend_MATE.exception.ErrorCode;
+import com.rookies5.Backend_MATE.repository.UserRepository;
 import com.rookies5.Backend_MATE.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.security.core.Authentication;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,16 +28,19 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final UserRepository userRepository;
 
     /**
-     * 1. 회원가입 (Signup)
+     * 1. 회원가입 (Signup) - 기본 이미지 자동 할당 (JSON 방식)
      */
     @PostMapping("/signup")
-    public ResponseEntity<UserResponseDto> signup(
-            @Valid @RequestPart("userData") UserRequestDto requestDto,
-            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage) {
+    public SuccessResponse<UserResponseDto> signup(@RequestBody @Valid UserRequestDto requestDto) {
         log.info("회원가입 요청: {}", requestDto.getEmail());
-        return ResponseEntity.ok(authService.register(requestDto, profileImage));
+
+        // profileImage 파라미터 삭제!
+        UserResponseDto responseDto = authService.register(requestDto);
+
+        return new SuccessResponse<>("회원가입이 성공적으로 완료되었습니다.", responseDto);
     }
 
     /**
@@ -88,41 +96,71 @@ public class AuthController {
     }
 
     /**
-     * 5. 아이디(이메일) 찾기
+     * 5. 아이디(이메일) 찾기 - 규격 통일
      */
     @GetMapping("/find-email")
-    public ResponseEntity<String> findEmail(@RequestParam String phoneNumber) {
-        return ResponseEntity.ok(authService.findEmailByPhoneNumber(phoneNumber));
+    public SuccessResponse<String> findEmail(@RequestParam String phoneNumber) {
+        log.info("이메일 찾기 요청: {}", phoneNumber);
+        String email = authService.findEmailByPhoneNumber(phoneNumber);
+
+        return new SuccessResponse<>("이메일 찾기에 성공하였습니다.", email);
     }
 
     /**
-     * 6. 비밀번호 재설정 (임시 비번 발급)
+     * 6. 비밀번호 재설정 (임시 비번 발급) - 규격 통일
      */
     @PostMapping("/reset-password")
-    public ResponseEntity<String> resetPassword(@RequestParam String email, @RequestParam String phoneNumber) {
+    public SuccessResponse<String> resetPassword(@RequestParam String email, @RequestParam String phoneNumber) {
+        log.info("비밀번호 재설정 요청: {}", email);
         String newPassword = authService.resetPassword(email, phoneNumber);
-        return ResponseEntity.ok(newPassword);
+
+        return new SuccessResponse<>("임시 비밀번호가 발급되었습니다. 로그인 후 비밀번호를 변경해 주세요.", newPassword);
     }
 
     /**
-     * 7. 로그인 (JWT 토큰 발급)
+     * 7. 로그인 (JWT 토큰 발급) - 규격 통일
      */
     @PostMapping("/login")
-    public ResponseEntity<AuthResponseDto> login(@RequestBody @Valid LoginRequestDto requestDto) {
+    public SuccessResponse<AuthResponseDto> login(@RequestBody @Valid LoginRequestDto requestDto) {
         log.info("로그인 요청: {}", requestDto.getEmail());
 
-        // 서비스의 login 메서드를 호출해서 토큰이 담긴 AuthResponseDto를 받아옵니다.
         AuthResponseDto responseDto = authService.login(requestDto.getEmail(), requestDto.getPassword());
 
-        return ResponseEntity.ok(responseDto);
+        return new SuccessResponse<>("로그인에 성공하였습니다.", responseDto);
     }
 
     /**
-     * 7. 로그아웃 (JWT 토큰 발급)
+     * 8. 로그아웃 - 규격 통일
      */
     @PostMapping("/logout")
-    public ResponseEntity<SuccessResponse<Void>> logout() {
-        // 서버는 저장한 게 없으니 지울 것도 없음!
-        return ResponseEntity.ok(new SuccessResponse<>("로그아웃 되었습니다.", null));
+    public SuccessResponse<Void> logout(Authentication authentication) {
+        log.info("로그아웃 요청");
+
+        String email = authentication.getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        authService.logout(user.getId());
+
+        // 데이터가 없을 때는 메시지만 담는 생성자 사용
+        return new SuccessResponse<>("로그아웃이 성공적으로 완료되었습니다.");
+    }
+
+    /**
+     * 9. 토큰 재발급 API - 규격 통일
+     */
+    @PostMapping("/refresh")
+    public SuccessResponse<AuthResponseDto> refresh(@RequestBody Map<String, String> request) {
+        log.info("토큰 재발급 요청");
+
+        String refreshToken = request.get("refreshToken");
+
+        if (refreshToken == null || refreshToken.trim().isEmpty()) {
+            throw new BusinessException(ErrorCode.REQUIRED_FIELD_MISSING);
+        }
+
+        AuthResponseDto responseDto = authService.refresh(refreshToken);
+
+        return new SuccessResponse<>("토큰이 성공적으로 재발급되었습니다.", responseDto);
     }
 }

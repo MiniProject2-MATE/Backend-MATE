@@ -10,7 +10,7 @@ public interface AuthService {
     /**
      * 1. 회원가입
      */
-    UserResponseDto register(UserRequestDto requestDto, MultipartFile profileImage);
+    UserResponseDto register(UserRequestDto requestDto);
 
     /**
      * 2. 로그인
@@ -41,4 +41,8 @@ public interface AuthService {
      * 7. 비밀번호 재설정 (임시 비밀번호 발급)
      */
     String resetPassword(String email, String phoneNumber);
+
+    void logout(Long userId);
+
+    AuthResponseDto refresh(String refreshToken);
 }
