@@ -42,10 +42,10 @@ public class AuthServiceImpl implements AuthService {
     private final String uploadPath = System.getProperty("user.home") + "/mate_uploads/profiles/";
 
     /**
-     * 1. 신규 회원을 등록(회원가입) - 이미지 로컬 저장 로직 적용
+     * 1. 신규 회원을 등록(회원가입) - 기본 이미지 자동 할당
      */
     @Override
-    public UserResponseDto register(UserRequestDto requestDto, MultipartFile profileImage) {
+    public UserResponseDto register(UserRequestDto requestDto) { // 👈 MultipartFile 파라미터 삭제
         // 중복 체크
         isEmailAvailable(requestDto.getEmail());
         isPhoneAvailable(requestDto.getPhoneNumber(), null);
@@ -54,35 +54,12 @@ public class AuthServiceImpl implements AuthService {
         String encodedPassword = passwordEncoder.encode(requestDto.getPassword());
         requestDto.setPassword(encodedPassword);
 
-        // 이미지 처리 로직 수정됨
-        if (profileImage != null && !profileImage.isEmpty()) {
-            try {
-                // 1. 폴더 생성 (없으면 자동 생성)
-                java.io.File folder = new java.io.File(uploadPath);
-                if (!folder.exists()) folder.mkdirs();
+        // 1. 기존 파일 저장 로직 삭제 및 기본 이미지 할당
+        String defaultImgUrl = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
+        requestDto.setProfileImg(defaultImgUrl);
+        log.info("회원가입 기본 프로필 이미지 세팅 완료");
 
-                // 2. 파일명 생성 (UUID를 써서 겹치지 않게 함)
-                String originalFilename = profileImage.getOriginalFilename();
-                String extension = "";
-                if (originalFilename != null && originalFilename.contains(".")) {
-                    extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-                }
-                String storeFilename = java.util.UUID.randomUUID().toString() + extension;
-
-                // 3. 내 컴퓨터 폴더에 실제 파일 저장
-                profileImage.transferTo(new java.io.File(uploadPath + storeFilename));
-
-                // 4. DTO에 저장된 상대 경로 세팅 (프론트엔드 접근용)
-                requestDto.setProfileImg("/uploads/profiles/" + storeFilename);
-
-                log.info("프로필 이미지 저장 성공: {}", storeFilename);
-            } catch (java.io.IOException e) {
-                log.error("파일 저장 중 오류 발생: {}", e.getMessage());
-                throw new BusinessException(ErrorCode.FILE_UPLOAD_ERROR); // 이 에러코드 꼭 추가하세요!
-            }
-        }
-
-        // 닉네임 미입력 시 이메일 기반자동 할당
+        // 2. 닉네임 미입력 시 이메일 기반 자동 할당 (기존 로직 유지)
         if (requestDto.getNickname() == null || requestDto.getNickname().trim().isEmpty()) {
             // 1. 이메일 앞자리 추출
             String defaultNickname = requestDto.getEmail().split("@")[0];
