@@ -3,75 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <title>회원 관리</title>
+
     <style>
         body { margin:0; font-family:Arial; background:#f1f5f9; }
-
         .header { display:flex; justify-content:space-between; align-items:center; padding:15px 20px; background:#1e293b; color:white; }
+        .left { display:flex; gap:20px; align-items:center; }
+        .title { font-weight:bold; font-size:18px; }
         .header-right { display:flex; gap:10px; align-items:center; }
-        .search-box {
-            display:flex;
-            align-items:center;
-            gap:5px;
-        }
-
-        .search-box input {
-            padding:6px 10px;
-            border-radius:5px;
-            border:none;
-        }
-
-        .search-box button {
-            padding:6px 10px;
-            border:none;
-            border-radius:5px;
-            background:#6366f1;
-            color:white;
-            cursor:pointer;
-        }
-
+        .search-box { display:flex; align-items:center; gap:5px; }
+        .search-box input { padding:6px 10px; border-radius:5px; border:none; }
+        .search-box button { padding:6px 10px; border:none; border-radius:5px; background:#6366f1; color:white; cursor:pointer; }
         .container { display:flex; }
         .sidebar { width:220px; background:#0f172a; color:white; padding:20px; height:100vh; }
         .sidebar a { display:block; padding:10px; color:white; text-decoration:none; }
         .sidebar a:hover { background:#1e293b; }
-
         .main { flex:1; padding:20px; }
-        .card { background:white; padding:15px; border-radius:10px; text-align:center;}
-        .left {
-            display:flex;
-            gap:20px;
-            align-items:center;
-        }
+        .card { background:white; padding:15px; border-radius:10px; margin-bottom:20px; }
         table { width:100%; border-collapse:collapse; }
-        th, td { padding:10px; border-bottom:1px solid #ddd; text-align:center;}
-
-
+        th, td { border-bottom:1px solid #ddd; padding:8px; text-align:center; }
+        .nickname { font-weight:bold; }
+        .email { font-size:12px; color:gray; }
+        .btn-detail { padding:5px 10px; border:none; border-radius:5px; background:#6366f1; color:white; cursor:pointer; }
         .pagination { text-align:center; margin-top:10px; }
-        .pagination button { margin:2px; padding:5px 10px; }
+        .pagination a { border:1px solid #ddd; background:white; padding:5px 10px; margin:2px; border-radius:5px; text-decoration:none; color:black; }
+        .pagination .active { background:#6366f1; color:white; }
     </style>
 </head>
 
 <body>
-
 <div class="header">
     <div class="left">
         <div>mate ADMIN</div>
         <div class="title">회원 관리</div>
     </div>
-
     <div class="header-right">
-        <!-- 🔍 검색창 -->
         <form class="search-box" action="/admin/search" method="get">
-            <input type="text" name="keyword" placeholder="회원 검색...">
+            <input type="text" name="keyword" th:value="${keyword}" placeholder="회원 검색...">
             <button type="submit">🔍</button>
         </form>
-
-        <div>👥</div>
     </div>
 </div>
 
 <div class="container">
-
-    <!-- 사이드바 그대로 -->
     <div class="sidebar">
         <div>👤 관리자</div>
         <div>Super Admin</div>
@@ -96,10 +69,10 @@
                     <th>관리</th>
                 </tr>
 
-                <tr th:each="u : ${users}">
+                <tr th:each="u : ${users.content}">
                     <td>
-                        <b th:text="${u.nickname}"></b><br>
-                        <small th:text="${u.email}"></small>
+                        <div class="nickname" th:text="${u.nickname}"></div>
+                        <div class="email" th:text="${u.email}"></div>
                     </td>
                     <td th:text="${u.createdAt}"></td>
                     <td>
@@ -108,68 +81,61 @@
                 </tr>
             </table>
 
+            <!-- 페이지네이션 -->
             <div class="pagination">
-                <button>&lt;</button>
-                <button class="active">1</button>
-                <button>2</button>
-                <button>3</button>
-                <button>&gt;</button>
+                <a th:href="@{/admin/users(userPage=0)}">&lt;&lt;</a>
+                <a th:if="${users.number > 0}" th:href="@{/admin/users(userPage=${users.number-1})}">&lt;</a>
+
+                <span th:each="i : ${#numbers.sequence(0, users.totalPages-1)}"
+                      th:if="${i >= users.number-2 and i <= users.number+2}">
+                    <a th:href="@{/admin/users(userPage=${i})}" th:text="${i+1}" th:classappend="${i==users.number} ? 'active'"></a>
+                </span>
+
+                <a th:if="${users.number < users.totalPages-1}" th:href="@{/admin/users(userPage=${users.number+1})}">&gt;</a>
+                <a th:href="@{/admin/users(userPage=${users.totalPages-1})}">&gt;&gt;</a>
             </div>
         </div>
     </div>
-
 </div>
 
-<script>
-    function toggleSearch(){
-        const box = document.getElementById("searchBox");
-        box.style.display = box.style.display === "block" ? "none" : "block";
-    }
-</script>
-<!-- USER DETAIL MODAL -->
+<!-- 회원 상세 모달 -->
 <div id="userDetailModal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-     background:white; padding:20px; border-radius:10px; box-shadow:0 0 15px rgba(0,0,0,0.3); z-index:1000; width:300px;">
+     background:white; padding:20px; border-radius:10px; z-index:1000; width:300px;">
     <h3>회원 상세 정보</h3>
     <div id="modalContent"></div>
     <button onclick="closeModal()">닫기</button>
 </div>
 
 <div id="modalOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
-     background:rgba(0,0,0,0.5); z-index:900;" onclick="closeModal()"></div>
-<script>
-    document.querySelectorAll('.btn-detail').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const userId = this.dataset.id;
+     background:rgba(0,0,0,0.5);" onclick="closeModal()"></div>
 
-            fetch(`/admin/users/${userId}`)
-                .then(res => {
-                    if (!res.ok) throw new Error("회원 정보를 불러오는데 실패했습니다.");
-                    return res.json();
-                })
+<script>
+    document.addEventListener('click', function(e) {
+        if(e.target.classList.contains('btn-detail')) {
+            fetch(`/admin/users/${e.target.dataset.id}`)
+                .then(res => res.json())
                 .then(user => {
-                    const content = `
-                        <p><strong>닉네임:</strong> ${user.nickname}</p>
-                        <p><strong>이메일:</strong> ${user.email}</p>
-                        <p><strong>전화번호:</strong> ${user.phoneNumber || '-'}</p>
-                        <p><strong>포지션:</strong> ${user.position || '-'}</p>
-                        <p><strong>가입일:</strong> ${new Date(user.createdAt).toLocaleString()}</p>
+                    document.getElementById('modalContent').innerHTML = `
+                        <p>닉네임: ${user.nickname}</p>
+                        <p>이메일: ${user.email}</p>
+                        <p>전화번호: ${user.phoneNumber || '-'}</p>
+                        <p>포지션: ${user.position || '-'}</p>
+                        <p>가입일: ${new Date(user.createdAt).toLocaleString()}</p>
                     `;
-                    document.getElementById('modalContent').innerHTML = content;
                     openModal();
-                })
-                .catch(err => alert(err.message));
-        });
+                });
+        }
     });
 
-        function openModal() {
-            document.getElementById('userDetailModal').style.display = 'block';
-            document.getElementById('modalOverlay').style.display = 'block';
-        }
+    function openModal() {
+        document.getElementById('userDetailModal').style.display = 'block';
+        document.getElementById('modalOverlay').style.display = 'block';
+    }
 
-        function closeModal() {
-            document.getElementById('userDetailModal').style.display = 'none';
-            document.getElementById('modalOverlay').style.display = 'none';
-        }
+    function closeModal() {
+        document.getElementById('userDetailModal').style.display = 'none';
+        document.getElementById('modalOverlay').style.display = 'none';
+    }
 </script>
 </body>
 </html>

@@ -11,10 +11,10 @@ import jakarta.validation.constraints.*;
 import lombok.*;
 import org.hibernate.annotations.Where;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "projects", indexes = {@Index(name = "idx_status", columnList = "status")})
-@Where(clause = "deleted_at IS NULL")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
@@ -99,5 +99,12 @@ public class Project extends BaseEntity {
         if (status != null) {
             this.status = status;
         }
+    }
+    public boolean isDeleted() {
+        return this.getDeletedAt() != null;
+    }
+    //soft delete 추가
+    public void softDelete() {
+        this.setDeletedAt(LocalDateTime.now());
     }
 }

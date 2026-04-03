@@ -41,6 +41,8 @@ public class ProjectMapper {
                 .status(project.getStatus())
                 .onOffline(project.getOnOffline())
                 .endDate(project.getEndDate())
+
+                .deleted(project.getDeletedAt()!=null)
                 // D-Day 계산
                 .remainingDays(project.getEndDate() != null ?
                         java.time.temporal.ChronoUnit.DAYS.between(java.time.LocalDate.now(), project.getEndDate()) : null)

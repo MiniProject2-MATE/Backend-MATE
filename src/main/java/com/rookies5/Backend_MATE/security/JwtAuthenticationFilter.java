@@ -45,12 +45,4 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         return null;
     }
-    //admin 살리기
-    @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) {
-        String path = request.getRequestURI();
-
-        //admin 요청은 JWT 필터 안 타게
-        return !path.startsWith("/api");
-    }
 }

@@ -33,3 +33,26 @@ VALUES (2, 3, '백엔드 개발자인데 리액트 기초부터 배우고 싶어
 -- 1번(백승호)이 2번(React 스터디)에 지원했다가 거절됨
 INSERT INTO applications (project_id, applicant_id, message, status, applied_at)
 VALUES (2, 1, '참여 희망합니다.', 'REJECTED', NOW());
+INSERT INTO users (
+    created_at,
+    updated_at,
+    deleted_at,
+    nickname,
+    phone_number,
+    email,
+    password,
+    profile_img,
+    position,
+    role
+) VALUES (
+    NOW(),
+    NULL,
+    NULL,
+    '관리자',
+    '01099999999',
+    'admin@mate.com',
+    '$2a$10$aBb/e9umQqst4mwOfyF14u.RXqesvKXPQHjJ763He8g52Ojk25EVS',
+    NULL,
+    'BE',
+    'ROLE_ADMIN'
+);

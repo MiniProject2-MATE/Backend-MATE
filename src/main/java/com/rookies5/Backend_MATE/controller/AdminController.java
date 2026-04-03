@@ -23,7 +23,7 @@ public class AdminController {
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
 
-    // ✅ 대시보드 (페이징 적용 핵심)
+    // ✅ 대시보드
     @GetMapping("/dashboard")
     public String dashboard(
             @RequestParam(defaultValue = "0") int userPage,
@@ -32,23 +32,24 @@ public class AdminController {
 
         int size = 5;
 
-        // 회원 페이지
+        // 회원 조회
         Page<UserResponseDto> users = userRepository
                 .findAll(PageRequest.of(userPage, size, Sort.by("createdAt").descending()))
                 .map(UserMapper::mapToUserResponse);
 
-        // 프로젝트 페이지
+        // ✅ 수정: soft delete 포함 프로젝트 조회
         Page<ProjectResponseDto> projects = projectRepository
-                .findAll(PageRequest.of(projectPage, size, Sort.by("createdAt").descending()))
-                .map(ProjectMapper::mapToResponse);
+                .findAllIncludingDeleted(PageRequest.of(projectPage, size, Sort.by("createdAt").descending()))
+                .map(project -> {
+                    ProjectResponseDto dto = ProjectMapper.mapToResponse(project);
+                    dto.setDeleted(project.getDeletedAt() != null); // soft delete 여부 표시
+                    return dto;
+                });
 
-        // 로그 (임시)
         List<String> logs = List.of("관리자 접속", "회원 가입 발생", "게시글 생성");
 
-        // 데이터 전달
         model.addAttribute("userCount", userRepository.count());
         model.addAttribute("projectCount", projectRepository.count());
-
         model.addAttribute("users", users);
         model.addAttribute("projects", projects);
         model.addAttribute("logs", logs);
@@ -56,39 +57,26 @@ public class AdminController {
         return "admin/dashboard";
     }
 
+    @GetMapping("/users")
+    public String userManagement(
+            @RequestParam(defaultValue = "0") int userPage,
+            Model model
+    ) {
+        int size = 5; // 한 페이지당 표시할 회원 수
+
+        // 회원 조회 (페이지네이션)
+        Page<UserResponseDto> users = userRepository
+                .findAll(PageRequest.of(userPage, size, Sort.by("createdAt").descending()))
+                .map(UserMapper::mapToUserResponse);
+
+        model.addAttribute("users", users);
+        model.addAttribute("userCount", userRepository.count());
+
+        return "admin/users"; // templates/admin/users.html
+    }
     @GetMapping("/login")
     public String loginPage() {
         return "admin/login";
-    }
-
-    // ✅ 회원 리스트 (10개씩)
-    @GetMapping("/users")
-    public String userList(
-            @RequestParam(defaultValue = "0") int page,
-            Model model) {
-
-        Page<UserResponseDto> result = userRepository
-                .findAll(PageRequest.of(page, 10, Sort.by("createdAt").descending()))
-                .map(UserMapper::mapToUserResponse);
-
-        model.addAttribute("users", result);
-
-        return "admin/users";
-    }
-
-    // ✅ 프로젝트 리스트
-    @GetMapping("/projects")
-    public String projectList(
-            @RequestParam(defaultValue = "0") int page,
-            Model model) {
-
-        Page<ProjectResponseDto> result = projectRepository
-                .findAll(PageRequest.of(page, 10, Sort.by("createdAt").descending()))
-                .map(ProjectMapper::mapToResponse);
-
-        model.addAttribute("projects", result);
-
-        return "admin/projects";
     }
 
     // ✅ 회원 상세 (모달용)
@@ -116,13 +104,39 @@ public class AdminController {
         return "redirect:/admin/dashboard";
     }
 
-    // ✅ 프로젝트 삭제
+    // ✅ 프로젝트 삭제 (soft delete)
     @PostMapping("/projects/delete/{id}")
-    public String deleteProject(@PathVariable Long id) {
-        projectRepository.deleteById(id);
-        return "redirect:/admin/dashboard";
+    public String deleteProject(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "0") int userPage,
+            @RequestParam(defaultValue = "0") int projectPage
+    ) {
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("프로젝트 없음"));
+        project.softDelete();
+        projectRepository.save(project);
+
+        // ✅ 수정: 페이지 정보 유지
+        return "redirect:/admin/dashboard?userPage=" + userPage + "&projectPage=" + projectPage;
     }
 
+    // ✅ 프로젝트 복구
+    @PostMapping("/projects/restore/{id}")
+    public String restoreProject(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "0") int userPage,
+            @RequestParam(defaultValue = "0") int projectPage
+    ) {
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("프로젝트 없음"));
+        project.setDeletedAt(null);
+        projectRepository.save(project);
+
+        // ✅ 수정: 페이지 정보 유지
+        return "redirect:/admin/dashboard?userPage=" + userPage + "&projectPage=" + projectPage;
+    }
+
+    // ✅ 검색 기능
     @GetMapping("/search")
     public String search(
             @RequestParam String keyword,
@@ -132,29 +146,22 @@ public class AdminController {
 
         int size = 5;
 
-        // 👉 전체 조회 후 필터
+        // 전체 회원 필터링
         List<UserResponseDto> userList = userRepository.findAll().stream()
                 .filter(u -> u.getNickname().contains(keyword) || u.getEmail().contains(keyword))
                 .map(UserMapper::mapToUserResponse)
                 .toList();
 
-        List<ProjectResponseDto> projectList = projectRepository.findAll().stream()
-                .filter(p -> p.getTitle().contains(keyword))
+        // ✅ 수정: soft delete 포함 프로젝트 필터링
+        List<ProjectResponseDto> projectList = projectRepository.findAllIncludingDeleted(PageRequest.of(0, Integer.MAX_VALUE))
                 .map(ProjectMapper::mapToResponse)
+                .stream()
+                .filter(p -> p.getTitle().contains(keyword))
                 .toList();
 
-        // 👉 Page로 변환 (이게 핵심)
-        Page<UserResponseDto> users = new PageImpl<>(
-                userList,
-                PageRequest.of(userPage, size),
-                userList.size()
-        );
-
-        Page<ProjectResponseDto> projects = new PageImpl<>(
-                projectList,
-                PageRequest.of(projectPage, size),
-                projectList.size()
-        );
+        // Page로 변환
+        Page<UserResponseDto> users = new PageImpl<>(userList, PageRequest.of(userPage, size), userList.size());
+        Page<ProjectResponseDto> projects = new PageImpl<>(projectList, PageRequest.of(projectPage, size), projectList.size());
 
         List<String> logs = List.of("관리자 접속", "회원 가입 발생", "게시글 생성");
 
@@ -167,4 +174,5 @@ public class AdminController {
 
         return "admin/dashboard";
     }
+
 }

@@ -1,5 +1,6 @@
 package com.rookies5.Backend_MATE.config;
 
+import com.rookies5.Backend_MATE.security.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -7,11 +8,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -19,37 +16,17 @@ import org.springframework.security.web.SecurityFilterChain;
 @Order(1)
 public class AdminSecurityConfig {
 
+    private final CustomUserDetailsService customUserDetailsService;
     private final PasswordEncoder passwordEncoder;
 
-    /**
-     * ❌ Bean 제거
-     * 👉 그냥 메서드로만 사용
-     */
-    private UserDetailsService adminUserDetailsService() {
-
-        UserDetails admin = User.builder()
-                .username("admin")
-                .password(passwordEncoder.encode("1234"))
-                .roles("ADMIN")
-                .build();
-
-        return new InMemoryUserDetailsManager(admin);
-    }
-
-    /**
-     * ✅ Provider (Bean 유지 가능)
-     */
     @Bean
     public DaoAuthenticationProvider adminAuthenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(adminUserDetailsService()); // 직접 호출
+        provider.setUserDetailsService(customUserDetailsService); // ⭐ DB 사용
         provider.setPasswordEncoder(passwordEncoder);
         return provider;
     }
 
-    /**
-     * ✅ Security Filter
-     */
     @Bean
     public SecurityFilterChain adminFilterChain(HttpSecurity http) throws Exception {
 
@@ -64,7 +41,7 @@ public class AdminSecurityConfig {
                         .loginPage("/admin/login")
                         .loginProcessingUrl("/admin/login")
                         .defaultSuccessUrl("/admin/dashboard", true)
-                        .usernameParameter("username")
+                        .usernameParameter("username") // 👈 중요
                         .passwordParameter("password")
                         .permitAll()
                 )
@@ -75,8 +52,8 @@ public class AdminSecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/admin/login", "/admin/logout").permitAll()
-                        .anyRequest().hasRole("ADMIN")
+                        .requestMatchers("/admin/login").permitAll()
+                        .requestMatchers("/admin/**").hasRole("ADMIN") // ⭐ 핵심
                 );
 
         return http.build();
