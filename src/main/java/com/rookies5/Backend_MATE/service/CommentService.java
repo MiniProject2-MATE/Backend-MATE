@@ -7,31 +7,15 @@ import java.util.List;
 
 public interface CommentService {
 
-    /**
-     * 댓글 작성
-     * @param requestDto 댓글 내용 등 입력 정보
-     * @return 생성된 댓글 정보 (작성자 닉네임, 생성 시간 포함)
-     */
-    CommentResponseDto createComment(CommentRequestDto requestDto);
+    // 1. 댓글 작성 (postId와 userId 추가)
+    CommentResponseDto createComment(Long postId, Long userId, CommentRequestDto requestDto);
 
-    /**
-     * 특정 게시글의 모든 댓글 조회
-     * @param postId 게시글 ID
-     * @return 해당 게시글에 달린 댓글 리스트
-     */
-    List<CommentResponseDto> getCommentsByPostId(Long postId);
+    // 2. 특정 게시글의 모든 댓글 조회 (userId 추가)
+    List<CommentResponseDto> getCommentsByPostId(Long postId, Long userId);
 
-    /**
-     * 댓글 수정
-     * @param commentId 수정할 댓글 ID
-     * @param requestDto 수정할 내용
-     * @return 수정된 댓글 정보
-     */
-    CommentResponseDto updateComment(Long commentId, CommentRequestDto requestDto);
+    // 3. 댓글 수정 (userId 추가)
+    CommentResponseDto updateComment(Long commentId, Long userId, CommentRequestDto requestDto);
 
-    /**
-     * 댓글 삭제
-     * @param commentId 삭제할 댓글 ID
-     */
-    void deleteComment(Long commentId);
+    // 4. 댓글 삭제 (userId 추가)
+    void deleteComment(Long commentId, Long userId);
 }
