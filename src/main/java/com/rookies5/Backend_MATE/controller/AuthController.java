@@ -31,14 +31,16 @@ public class AuthController {
     private final UserRepository userRepository;
 
     /**
-     * 1. 회원가입 (Signup)
+     * 1. 회원가입 (Signup) - 기본 이미지 자동 할당 (JSON 방식)
      */
     @PostMapping("/signup")
-    public ResponseEntity<UserResponseDto> signup(
-            @Valid @RequestPart("userData") UserRequestDto requestDto,
-            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage) {
+    public SuccessResponse<UserResponseDto> signup(@RequestBody @Valid UserRequestDto requestDto) {
         log.info("회원가입 요청: {}", requestDto.getEmail());
-        return ResponseEntity.ok(authService.register(requestDto, profileImage));
+
+        // profileImage 파라미터 삭제!
+        UserResponseDto responseDto = authService.register(requestDto);
+
+        return new SuccessResponse<>("회원가입이 성공적으로 완료되었습니다.", responseDto);
     }
 
     /**

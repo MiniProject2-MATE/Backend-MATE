@@ -77,6 +77,13 @@ public class UserServiceImpl implements UserService {
             isNicknameAvailable(requestDto.getNickname(), userId);
         }
 
+        // 전화번호 변경 시 중복 체크
+        if (requestDto.getPhoneNumber() != null && !user.getPhoneNumber().equals(requestDto.getPhoneNumber())) {
+            if (userRepository.existsByPhoneNumber(requestDto.getPhoneNumber())) {
+                throw new BusinessException(ErrorCode.USER_PHONE_DUPLICATE);
+            }
+        }
+
         user.updateProfile(
                 requestDto.getNickname(),
                 requestDto.getPosition(),

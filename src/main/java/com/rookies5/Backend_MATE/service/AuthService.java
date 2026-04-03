@@ -10,7 +10,7 @@ public interface AuthService {
     /**
      * 1. 회원가입
      */
-    UserResponseDto register(UserRequestDto requestDto, MultipartFile profileImage);
+    UserResponseDto register(UserRequestDto requestDto);
 
     /**
      * 2. 로그인
