@@ -1,5 +1,7 @@
 package com.rookies5.Backend_MATE.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.rookies5.Backend_MATE.entity.BaseEntity;
 import com.rookies5.Backend_MATE.entity.enums.Category;
 import com.rookies5.Backend_MATE.entity.enums.OnOffline;
@@ -26,6 +28,7 @@ public class Project extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id", nullable = false)
+    @JsonIgnoreProperties({"myProjects"})
     private User owner;
 
     @Enumerated(EnumType.STRING)
