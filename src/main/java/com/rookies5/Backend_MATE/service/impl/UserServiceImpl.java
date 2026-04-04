@@ -63,32 +63,28 @@ public class UserServiceImpl implements UserService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 3. 내 정보 수정 (닉네임 중복 검사 포함)
-     */
     @Override
     public UserResponseDto updateUser(Long userId, UserRequestDto requestDto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.USER_NOT_FOUND, userId));
 
-        // 닉네임 변경 시에만 중복 체크 실행
+        // 1. 닉네임 변경 시 중복 체크
         if (requestDto.getNickname() != null && !user.getNickname().equals(requestDto.getNickname())) {
-            // 이 메서드 안에서 중복/형식 에러를 다 던져주므로 호출만 하면 끝!
             isNicknameAvailable(requestDto.getNickname(), userId);
         }
 
-        // 전화번호 변경 시 중복 체크
+        // 2. 전화번호 변경 시 중복 체크
         if (requestDto.getPhoneNumber() != null && !user.getPhoneNumber().equals(requestDto.getPhoneNumber())) {
             if (userRepository.existsByPhoneNumber(requestDto.getPhoneNumber())) {
                 throw new BusinessException(ErrorCode.USER_PHONE_DUPLICATE);
             }
         }
 
+        // 3. 엔티티 메서드 호출
         user.updateProfile(
                 requestDto.getNickname(),
                 requestDto.getPosition(),
                 requestDto.getTechStacks(),
-                requestDto.getProfileImg(),
                 requestDto.getPhoneNumber()
         );
 
@@ -103,7 +99,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.USER_NOT_FOUND, userId));
 
-        // 지호 님, 아직 softDelete 구현 전이라 하셨으니 일단 Hard Delete 유지합니다.
+        // 아직 softDelete 구현 전이라 하셨으니 일단 Hard Delete 유지합니다.
         // 나중에 엔티티에 필드 추가 후 user.softDelete()로 바꾸시면 됩니다!
         userRepository.delete(user);
     }
@@ -151,49 +147,41 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public String updateProfileImage(Long userId, MultipartFile profileImage) {
+        // 1. 유저 조회
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.USER_NOT_FOUND, userId));
 
+        // 2. 파일 유효성 검사
         if (profileImage == null || profileImage.isEmpty()) {
-            throw new BusinessException(ErrorCode.VALIDATION_ERROR);
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "업로드할 이미지가 없습니다.");
         }
 
         try {
-            // 1. 기존 파일 삭제 로직 (추가된 부분)
-            String oldImgUrl = user.getProfileImg();
-            // 기본 이미지(Pixabay 등)가 아니고, 우리가 저장한 로컬 경로일 때만 삭제
-            if (oldImgUrl != null && oldImgUrl.startsWith("/uploads/profiles/")) {
-                // DB 경로 "/uploads/profiles/uuid.jpg"에서 파일명만 추출
-                String oldFileName = oldImgUrl.replace("/uploads/profiles/", "");
-                java.io.File oldFile = new java.io.File(uploadPath + oldFileName);
+            // 3. [개선] 공통 메서드를 사용하여 기존 파일 삭제 (한 줄로 끝!)
+            deleteActualFile(user.getProfileImg());
 
-                if (oldFile.exists()) {
-                    oldFile.delete(); // 실제 파일 삭제
-                    log.info("기존 프로필 이미지 삭제 완료: {}", oldFileName);
-                }
-            }
-
-            // 2. 폴더 확인 및 생성
+            // 4. 저장 폴더 생성
             java.io.File folder = new java.io.File(uploadPath);
             if (!folder.exists()) folder.mkdirs();
 
-            // 3. 새 파일명 생성 (UUID)
+            // 5. 새 파일명 생성 (UUID 활용)
             String originalFilename = profileImage.getOriginalFilename();
             String extension = (originalFilename != null && originalFilename.contains("."))
                     ? originalFilename.substring(originalFilename.lastIndexOf(".")) : "";
             String storeFilename = java.util.UUID.randomUUID().toString() + extension;
 
-            // 4. 새 파일 저장
+            // 6. 새 파일 실제 저장
             profileImage.transferTo(new java.io.File(uploadPath + storeFilename));
 
-            // 5. DB 업데이트
+            // 7. DB 경로 업데이트 및 반환
             String newImgUrl = "/uploads/profiles/" + storeFilename;
             user.updateProfileImg(newImgUrl);
 
+            log.info("유저(ID: {})의 프로필 이미지가 업데이트되었습니다: {}", userId, storeFilename);
             return newImgUrl;
 
         } catch (java.io.IOException e) {
-            log.error("파일 처리 중 오류 발생: {}", e.getMessage());
+            log.error("파일 저장 중 오류 발생: {}", e.getMessage());
             throw new BusinessException(ErrorCode.FILE_UPLOAD_ERROR);
         }
     }
@@ -206,28 +194,8 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.USER_NOT_FOUND, userId));
 
-        // 1. 기존에 저장된 '실제 파일'이 있다면 삭제 시도
-        String currentImgUrl = user.getProfileImg();
-
-        // 우리가 저장한 로컬 경로(/uploads/profiles/)인 경우에만 파일을 지웁니다.
-        if (currentImgUrl != null && currentImgUrl.startsWith("/uploads/profiles/")) {
-            try {
-                // 경로에서 파일명만 추출 (예: uuid.jpg)
-                String fileName = currentImgUrl.replace("/uploads/profiles/", "");
-                java.io.File fileToDelete = new java.io.File(uploadPath + fileName);
-
-                if (fileToDelete.exists()) {
-                    if (fileToDelete.delete()) {
-                        log.info("기존 프로필 이미지 파일 삭제 성공: {}", fileName);
-                    } else {
-                        log.warn("파일 삭제 실패 (권한 문제 등): {}", fileName);
-                    }
-                }
-            } catch (Exception e) {
-                log.error("파일 삭제 중 예상치 못한 오류 발생: {}", e.getMessage());
-                // 파일 삭제 실패가 비즈니스 로직을 멈출 정도는 아니므로 예외를 던지지는 않습니다.
-            }
-        }
+        // 1. 공통 메서드를 사용하여 실제 파일 삭제
+        deleteActualFile(user.getProfileImg());
 
         // 2. DB 정보는 기본 이미지 URL로 변경
         user.updateProfileImg(DEFAULT_PROFILE_IMG);
@@ -263,5 +231,28 @@ public class UserServiceImpl implements UserService {
     public List<ApplicationResponseDto> getMyPendingApplications(Long userId) {
         // ApplicationService에 위임하여 승인 대기/거절 상태인 내역을 가져옵니다.
         return applicationService.getMyPendingApplications(userId);
+    }
+
+    /**
+     * [공통] 로컬 서버에 저장된 실제 파일을 삭제하는 내부 메서드
+     */
+    private void deleteActualFile(String imgUrl) {
+        // 우리가 관리하는 경로(/uploads/profiles/)인 경우에만 파일 삭제 시도
+        if (imgUrl != null && imgUrl.startsWith("/uploads/profiles/")) {
+            try {
+                String fileName = imgUrl.replace("/uploads/profiles/", "");
+                java.io.File fileToDelete = new java.io.File(uploadPath + fileName);
+
+                if (fileToDelete.exists()) {
+                    if (fileToDelete.delete()) {
+                        log.info("로컬 파일 삭제 성공: {}", fileName);
+                    } else {
+                        log.warn("로컬 파일 삭제 실패 (권한 등): {}", fileName);
+                    }
+                }
+            } catch (Exception e) {
+                log.error("파일 삭제 중 오류 발생: {}", e.getMessage());
+            }
+        }
     }
 }

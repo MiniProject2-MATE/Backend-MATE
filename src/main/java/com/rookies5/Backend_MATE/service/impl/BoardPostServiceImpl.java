@@ -5,6 +5,7 @@ import com.rookies5.Backend_MATE.dto.response.BoardPostResponseDto;
 import com.rookies5.Backend_MATE.entity.BoardPost;
 import com.rookies5.Backend_MATE.entity.Project;
 import com.rookies5.Backend_MATE.entity.User;
+import com.rookies5.Backend_MATE.entity.enums.UserRole;
 import com.rookies5.Backend_MATE.exception.*;
 
 import com.rookies5.Backend_MATE.mapper.BoardPostMapper;
@@ -94,17 +95,22 @@ public class BoardPostServiceImpl implements BoardPostService {
      */
     @Override
     public void deletePost(Long postId, Long userId) {
+        // 1. 게시글 존재 확인
         BoardPost post = boardPostRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.BOARD_NOT_FOUND, postId));
 
-        // [추가] 프로젝트 멤버 확인
+        // 2. 프로젝트 멤버인지 먼저 확인 (외부인 차단)
         validateProjectMember(post.getProject().getId(), userId);
 
-        // 본인 확인
-        if (!post.getAuthor().getId().equals(userId)) {
-            throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED);
+        // 3. 권한 검증 (OR 조건)
+        boolean isAuthor = post.getAuthor().getId().equals(userId);
+        boolean isProjectOwner = post.getProject().getOwner().getId().equals(userId);
+
+        if (!isAuthor && !isProjectOwner) {
+            throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED, "삭제 권한이 없습니다.");
         }
 
+        // 5. 삭제 수행
         boardPostRepository.delete(post);
     }
 

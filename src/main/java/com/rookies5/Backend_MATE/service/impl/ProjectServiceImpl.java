@@ -4,8 +4,10 @@ import com.rookies5.Backend_MATE.dto.request.ProjectRequestDto;
 import com.rookies5.Backend_MATE.dto.response.ProjectResponseDto;
 import com.rookies5.Backend_MATE.entity.BoardPost;
 import com.rookies5.Backend_MATE.entity.Project;
+import com.rookies5.Backend_MATE.entity.ProjectMember;
 import com.rookies5.Backend_MATE.entity.User;
 import com.rookies5.Backend_MATE.entity.enums.ApplicationStatus;
+import com.rookies5.Backend_MATE.entity.enums.MemberRole;
 import com.rookies5.Backend_MATE.entity.enums.ProjectStatus;
 import com.rookies5.Backend_MATE.exception.BusinessException;
 import com.rookies5.Backend_MATE.exception.EntityNotFoundException;
@@ -44,15 +46,24 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional
     public ProjectResponseDto createProject(Long userId, ProjectRequestDto requestDto) {
-        // 1. 컨트롤러에서 넘겨받은 userId로 방장(User)을 찾습니다.
+        // 1. 방장(User) 조회
         User owner = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        // 2. 매퍼를 활용해 DTO와 User 엔티티를 하나의 Project 엔티티로 합칩니다.
+        // 2. Project 엔티티 생성 및 저장
         Project project = ProjectMapper.mapToEntity(requestDto, owner);
-
-        // 3. 저장 후 결과를 다시 Response DTO로 변환하여 반환합니다.
         Project savedProject = projectRepository.save(project);
+
+        // 3. 방장을 ProjectMember 테이블에도 저장
+        ProjectMember leader = ProjectMember.builder()
+                .project(savedProject)
+                .user(owner)
+                .role(MemberRole.OWNER)
+                .build();
+
+        projectMemberRepository.save(leader);
+
+        // 4. 결과 반환
         return ProjectMapper.mapToResponse(savedProject, userId);
     }
 

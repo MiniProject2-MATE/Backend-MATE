@@ -26,7 +26,7 @@ public interface UserService {
     UserResponseDto updateUser(Long userId, UserRequestDto requestDto);
 
     /**
-     * 4. 회원 탈퇴 (Soft Delete 방식)
+     * 4. 회원 탈퇴 (hard delete)
      */
     void deleteUser(Long userId);
 

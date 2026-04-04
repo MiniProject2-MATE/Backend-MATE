@@ -32,6 +32,5 @@ public class UserRequestDto {
     @NotEmpty(message = "기술 스택은 최소 1개 이상 선택해야 합니다.")
     private Set<String> techStacks;
 
-    // 프로필 이미지는 선택 사항이므로 아무것도 달지 않습니다.
     private String profileImg;
 }
