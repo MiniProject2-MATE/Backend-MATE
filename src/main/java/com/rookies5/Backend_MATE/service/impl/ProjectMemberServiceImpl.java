@@ -44,25 +44,30 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
     }
 
     /**
-     * 2. 팀원 강제 퇴출 또는 자진 탈퇴
+     * 팀원 강제 퇴출 (OWNER 전용)
      */
     @Override
-    public void removeMember(Long memberId) {
-        // 멤버 존재 여부 확인 예외처리
-        ProjectMember member = projectMemberRepository.findById(memberId)
+    @Transactional
+    public void removeMember(Long memberId, Long currentUserId) {
+        // 1. 대상 멤버 존재 확인
+        ProjectMember targetMember = projectMemberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.MEMBER_NOT_FOUND, memberId));
 
-        // 권한 체크: 방장은 탈퇴 불가
-        if (member.getRole() == MemberRole.OWNER) {
-            // detail 필드를 활용하여 구체적인 이유 명시
-            throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED, "방장은 프로젝트를 탈퇴할 수 없습니다.");
+        Project project = targetMember.getProject();
+        Long ownerId = project.getOwner().getId();
+
+        // 2. 권한 체크: 요청자가 해당 프로젝트의 방장(OWNER)인지 확인
+        if (!ownerId.equals(currentUserId)) {
+            throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED, "팀원 퇴출은 방장만 가능합니다.");
         }
 
-        // 인원수 감소 로직
-        Project project = member.getProject();
-        project.decreaseCurrentCount();
+        // 3. 방장 본인은 퇴출 대상이 될 수 없음 (방어 로직)
+        if (targetMember.getUser().getId().equals(ownerId)) {
+            throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED, "방장 본인을 퇴출할 수 없습니다. 프로젝트 삭제를 이용하세요.");
+        }
 
-        // 멤버 테이블에서 해당 데이터 삭제
-        projectMemberRepository.delete(member);
+        // 4. 인원수 감소 및 데이터 삭제
+        project.decreaseCurrentCount();
+        projectMemberRepository.delete(targetMember);
     }
 }

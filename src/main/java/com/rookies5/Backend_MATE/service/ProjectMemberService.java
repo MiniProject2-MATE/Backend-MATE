@@ -17,5 +17,5 @@ public interface ProjectMemberService {
      * 프로젝트에서 특정 멤버를 제외 (추방 또는 탈퇴)
      * @param memberId 프로젝트 멤버 고유 ID
      */
-    void removeMember(Long memberId);
+    void removeMember(Long memberId, Long currentUserId);
 }

@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.file.attribute.UserPrincipal;
 import java.util.List;
 
 @Slf4j
@@ -76,6 +77,7 @@ public class ProjectController {
 
         return new SuccessResponse<>("프로젝트 정보가 성공적으로 수정되었습니다.", responseDto);
     }
+
     /**
      * 프로젝트 삭제
      */
@@ -94,5 +96,19 @@ public class ProjectController {
         log.info("프로젝트 수동 마감 요청 - projectId: {}", projectId);
         ProjectResponseDto responseDto = projectService.closeProjectRecruitment(projectId);
         return new SuccessResponse<>("프로젝트 모집이 마감되었습니다.", responseDto);
+    }
+
+    /**
+     * 프로젝트 재모집 시작 (OWNER 전용)
+     */
+    @PatchMapping("/{projectId}/reopen")
+    public SuccessResponse<ProjectResponseDto> reopenProject(
+            @PathVariable Long projectId,
+            @AuthenticationPrincipal CustomUserDetails customUserDetails) { // 1. 타입 수정
+
+        // 2. customUserDetails에서 getId() 호출 (아까 추가한 메서드)
+        ProjectResponseDto response = projectService.reopenProject(projectId, customUserDetails.getId());
+
+        return new SuccessResponse<>("재모집이 시작되었습니다.", response);
     }
 }

@@ -34,6 +34,7 @@ public enum ErrorCode {
     PROJECT_CLOSED("PROJECT_003", "모집이 마감된 프로젝트입니다", HttpStatus.UNPROCESSABLE_ENTITY),
     PROJECT_RECRUITMENT_FULL("PROJECT_004", "모집 정원이 가득 찼습니다", HttpStatus.UNPROCESSABLE_ENTITY),
     PROJECT_RECRUIT_COUNT_INVALID("PROJECT_005", "모집 인원은 현재 합류한 인원보다 적을 수 없습니다", HttpStatus.BAD_REQUEST),
+    PROJECT_END_DATE_INVALID("PROJECT_006", "마감 일자는 오늘 이후여야 합니다", HttpStatus.BAD_REQUEST),
 
     // 지원서/매칭 관련 (40X, 422)
     APPLY_NOT_FOUND("APPLY_001", "지원서를 찾을 수 없습니다", HttpStatus.NOT_FOUND),

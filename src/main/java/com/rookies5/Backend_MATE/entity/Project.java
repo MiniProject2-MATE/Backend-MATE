@@ -7,6 +7,8 @@ import com.rookies5.Backend_MATE.entity.BaseEntity;
 import com.rookies5.Backend_MATE.entity.enums.Category;
 import com.rookies5.Backend_MATE.entity.enums.OnOffline;
 import com.rookies5.Backend_MATE.entity.enums.ProjectStatus;
+import com.rookies5.Backend_MATE.exception.BusinessException;
+import com.rookies5.Backend_MATE.exception.ErrorCode;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -103,5 +105,22 @@ public class Project extends BaseEntity {
     //soft delete 추가
     public void softDelete() {
         this.setDeletedAt(LocalDateTime.now());
+    }
+
+    // 모집글 수동마감 후 다시 재오픈
+    public void reopen(int newRecruitCount, LocalDate newEndDate) {
+        // 1. 인원 검증
+        if (newRecruitCount <= this.currentCount) {
+            throw new BusinessException(ErrorCode.PROJECT_RECRUIT_COUNT_INVALID);
+        }
+
+        // 2. 기간 검증
+        if (newEndDate.isBefore(LocalDate.now())) {
+            throw new BusinessException(ErrorCode.PROJECT_END_DATE_INVALID);
+        }
+
+        this.recruitCount = newRecruitCount;
+        this.endDate = newEndDate;
+        this.status = ProjectStatus.RECRUITING;
     }
 }

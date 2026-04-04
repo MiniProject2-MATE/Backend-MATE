@@ -50,4 +50,5 @@ public interface ProjectService {
 
     List<ProjectResponseDto> getMyOwnedPosts(Long userId);      // (1) 내 모집글
     List<ProjectResponseDto> getMyJoinedProjects(Long userId);   // (2) 참여 중인 프로젝트
+    ProjectResponseDto reopenProject(Long projectId, Long userId);
 }

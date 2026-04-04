@@ -189,4 +189,28 @@ public class ProjectServiceImpl implements ProjectService {
                 .map(app -> ProjectMapper.mapToResponse(app.getProject(), userId))
                 .collect(Collectors.toList());
     }
+
+    @Transactional
+    @Override
+    public ProjectResponseDto reopenProject(Long projectId, Long userId) {
+        // 1. 프로젝트 존재 확인
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new EntityNotFoundException(ErrorCode.PROJECT_NOT_FOUND, projectId));
+
+        // 2. 방장 권한 확인 (OWNER 전용)
+        if (!project.getOwner().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED, "재모집 권한이 없습니다.");
+        }
+
+        // 3. 상태 확인 (이미 모집 중이면 굳이 로직 수행 안 함)
+        if (project.getStatus() == ProjectStatus.RECRUITING) {
+            return ProjectMapper.mapToResponse(project, userId);
+        }
+
+        // 4. 재모집 로직 실행 (엔티티 메서드 호출)
+        // 인원이나 날짜 수정 없이 상태만 바꾼다면 기존 값을 그대로 넘깁니다.
+        project.reopen(project.getRecruitCount(), project.getEndDate());
+
+        return ProjectMapper.mapToResponse(project, userId);
+    }
 }
