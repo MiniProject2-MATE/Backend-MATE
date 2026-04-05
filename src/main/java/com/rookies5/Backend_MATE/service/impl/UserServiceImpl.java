@@ -4,6 +4,7 @@ import com.rookies5.Backend_MATE.dto.request.UserRequestDto;
 import com.rookies5.Backend_MATE.dto.response.ApplicationResponseDto;
 import com.rookies5.Backend_MATE.dto.response.ProjectResponseDto;
 import com.rookies5.Backend_MATE.dto.response.UserResponseDto;
+import com.rookies5.Backend_MATE.entity.Project;
 import com.rookies5.Backend_MATE.entity.User;
 import com.rookies5.Backend_MATE.exception.BusinessException;
 import com.rookies5.Backend_MATE.exception.EntityNotFoundException;
@@ -11,9 +12,7 @@ import com.rookies5.Backend_MATE.exception.ErrorCode;
 import com.rookies5.Backend_MATE.mapper.ApplicationMapper;
 import com.rookies5.Backend_MATE.mapper.ProjectMapper;
 import com.rookies5.Backend_MATE.mapper.UserMapper;
-import com.rookies5.Backend_MATE.repository.ApplicationRepository;
-import com.rookies5.Backend_MATE.repository.ProjectRepository;
-import com.rookies5.Backend_MATE.repository.UserRepository;
+import com.rookies5.Backend_MATE.repository.*;
 // import com.rookies5.Backend_MATE.repository.ProjectRepository;     // 나중에 추가 시 주석 해제
 // import com.rookies5.Backend_MATE.repository.ApplicationRepository; // 나중에 추가 시 주석 해제
 import com.rookies5.Backend_MATE.service.ApplicationService;
@@ -37,6 +36,12 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final ProjectService projectService;
     private final ApplicationService applicationService;
+    private final ProjectRepository projectRepository;
+    private final BoardPostRepository boardPostRepository;
+    private final CommentRepository commentRepository;
+    private final ApplicationRepository applicationRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final ProjectMemberRepository projectMemberRepository;
     private final String uploadPath = System.getProperty("user.home") + "/mate_uploads/profiles/";
 
     private static final String DEFAULT_PROFILE_IMG = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
@@ -63,6 +68,9 @@ public class UserServiceImpl implements UserService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 3. 회원 정보 수정
+     */
     @Override
     public UserResponseDto updateUser(Long userId, UserRequestDto requestDto) {
         User user = userRepository.findById(userId)
@@ -92,16 +100,39 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
-     * 4. 회원 탈퇴 (Hard Delete -> Soft Delete 전환 준비)
+     * 4. 회원 탈퇴
      */
     @Override
-    public void deleteUser(Long userId) {
+    public void deleteUser(Long userId, User currentUser) {
+        // 본인 확인 로직 추가
+        // 탈퇴하려는 대상(userId)이 현재 로그인한 사람(currentUser)과 다르면 예외 발생
+        if (!userId.equals(currentUser.getId())) {
+            throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED);
+        }
+
+        // 유저 존재 확인
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.USER_NOT_FOUND, userId));
 
-        // 아직 softDelete 구현 전이라 하셨으니 일단 Hard Delete 유지합니다.
-        // 나중에 엔티티에 필드 추가 후 user.softDelete()로 바꾸시면 됩니다!
-        userRepository.delete(user);
+        // 이 유저가 방장인 프로젝트들 폭파
+        List<Project> ownedProjects = projectRepository.findAllByOwnerId(userId);
+        for (Project project : ownedProjects) {
+            projectService.deleteProject(project.getId(), userId);
+        }
+
+        // 이 유저가 작성한 게시글, 댓글 등 흔적 지우기
+        boardPostRepository.softDeleteAllByAuthorId(userId);
+        commentRepository.softDeleteAllByAuthorId(userId);
+        applicationRepository.softDeleteAllByApplicantId(userId);
+        projectMemberRepository.softDeleteAllByUserId(userId);
+
+        //refresh 토큰은 DB에서 완전 삭제 (Hard-delete)
+        refreshTokenRepository.deleteByUserId(userId);
+
+        // 유저 테이블의 deleted_at 업데이트 쿼리 실행!
+        userRepository.softDeleteById(userId);
+
+        log.info("회원 탈퇴 완료 - 유저 ID: {}", userId);
     }
 
     /**
@@ -157,7 +188,7 @@ public class UserServiceImpl implements UserService {
         }
 
         try {
-            // 3. [개선] 공통 메서드를 사용하여 기존 파일 삭제 (한 줄로 끝!)
+            // 3. 공통 메서드를 사용하여 기존 파일 삭제
             deleteActualFile(user.getProfileImg());
 
             // 4. 저장 폴더 생성
@@ -209,7 +240,6 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     @Override
     public List<ProjectResponseDto> getMyOwnedPosts(Long userId) {
-        // ProjectService에 위임하여 내가 방장인 글 목록을 가져옵니다.
         return projectService.getMyOwnedPosts(userId);
     }
 
@@ -219,7 +249,6 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     @Override
     public List<ProjectResponseDto> getMyJoinedProjects(Long userId) {
-        // ProjectService에 위임하여 내가 멤버로 참여 중인 글 목록을 가져옵니다.
         return projectService.getMyJoinedProjects(userId);
     }
 
@@ -229,7 +258,6 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     @Override
     public List<ApplicationResponseDto> getMyPendingApplications(Long userId) {
-        // ApplicationService에 위임하여 승인 대기/거절 상태인 내역을 가져옵니다.
         return applicationService.getMyPendingApplications(userId);
     }
 

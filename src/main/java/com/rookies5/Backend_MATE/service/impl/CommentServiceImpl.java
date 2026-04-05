@@ -94,16 +94,13 @@ public class CommentServiceImpl implements CommentService {
         return CommentMapper.mapToResponse(comment);
     }
 
-    /**
-     * 4. 댓글 삭제
-     */
     @Override
     public void deleteComment(Long commentId, Long userId) {
         // 1. 댓글 존재 여부 확인
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.COMMENT_NOT_FOUND, commentId));
 
-        // 2. 권한 검증: 댓글 작성자 본인이거나 해당 프로젝트의 방장인 경우에만 삭제 가능
+        // 2. 권한 검증: 댓글 작성자 본인이거나 해당 프로젝트의 방장인 경우
         boolean isAuthor = comment.getAuthor().getId().equals(userId);
         boolean isProjectOwner = comment.getPost().getProject().getOwner().getId().equals(userId);
 
@@ -111,8 +108,8 @@ public class CommentServiceImpl implements CommentService {
             throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED, "댓글 삭제 권한이 없습니다.");
         }
 
-        // 3. DB 삭제
-        commentRepository.delete(comment);
+        // 3. Soft Delete 수행
+        commentRepository.softDeleteById(commentId);
     }
 
     // --- 공통 검증 메서드 ---

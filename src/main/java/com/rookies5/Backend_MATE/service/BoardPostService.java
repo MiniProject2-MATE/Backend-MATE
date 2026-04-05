@@ -2,6 +2,9 @@ package com.rookies5.Backend_MATE.service;
 
 import com.rookies5.Backend_MATE.dto.request.BoardPostRequestDto;
 import com.rookies5.Backend_MATE.dto.response.BoardPostResponseDto;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -39,4 +42,5 @@ public interface BoardPostService {
      * 게시글 상세 조회
      */
     BoardPostResponseDto getPostDetail(Long projectId, Long postId, Long userId);
+
 }

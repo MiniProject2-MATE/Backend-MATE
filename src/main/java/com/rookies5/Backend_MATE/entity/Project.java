@@ -17,6 +17,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
+@Where(clause = "deleted_at IS NULL")
 @Table(name = "projects", indexes = {@Index(name = "idx_status", columnList = "status")})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -98,13 +99,6 @@ public class Project extends BaseEntity {
         if (dto.getOnOffline() != null) this.onOffline = dto.getOnOffline();
         if (dto.getEndDate() != null) this.endDate = dto.getEndDate();
         if (dto.getStatus() != null) this.status = dto.getStatus();
-    }
-    public boolean isDeleted() {
-        return this.getDeletedAt() != null;
-    }
-    //soft delete 추가
-    public void softDelete() {
-        this.setDeletedAt(LocalDateTime.now());
     }
 
     // 모집글 수동마감 후 다시 재오픈

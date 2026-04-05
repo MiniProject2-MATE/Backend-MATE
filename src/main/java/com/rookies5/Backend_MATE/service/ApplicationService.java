@@ -2,6 +2,9 @@ package com.rookies5.Backend_MATE.service;
 
 import com.rookies5.Backend_MATE.dto.request.ApplicationRequestDto;
 import com.rookies5.Backend_MATE.dto.response.ApplicationResponseDto;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 

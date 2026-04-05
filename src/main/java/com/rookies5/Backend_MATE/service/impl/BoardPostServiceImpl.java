@@ -9,14 +9,11 @@ import com.rookies5.Backend_MATE.entity.enums.UserRole;
 import com.rookies5.Backend_MATE.exception.*;
 
 import com.rookies5.Backend_MATE.mapper.BoardPostMapper;
-import com.rookies5.Backend_MATE.repository.BoardPostRepository;
-import com.rookies5.Backend_MATE.repository.ProjectRepository;
-import com.rookies5.Backend_MATE.repository.UserRepository;
+import com.rookies5.Backend_MATE.repository.*;
 import com.rookies5.Backend_MATE.service.BoardPostService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.rookies5.Backend_MATE.repository.ProjectMemberRepository;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,7 +26,8 @@ public class BoardPostServiceImpl implements BoardPostService {
     private final BoardPostRepository boardPostRepository;
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
-    private final ProjectMemberRepository projectMemberRepository; // 추가: 권한 검증용
+    private final ProjectMemberRepository projectMemberRepository;
+    private final CommentRepository commentRepository;
 
     /**
      * 새로운 게시글 작성
@@ -73,7 +71,6 @@ public class BoardPostServiceImpl implements BoardPostService {
      * 게시글 부분 수정 (PATCH)
      */
     @Override
-    @Transactional
     public BoardPostResponseDto patchPost(Long postId, Long userId, BoardPostRequestDto requestDto) {
         BoardPost post = boardPostRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.BOARD_NOT_FOUND, postId));
@@ -102,7 +99,7 @@ public class BoardPostServiceImpl implements BoardPostService {
         // 2. 프로젝트 멤버인지 먼저 확인 (외부인 차단)
         validateProjectMember(post.getProject().getId(), userId);
 
-        // 3. 권한 검증 (OR 조건)
+        // 3. 권한 검증 (작성자이거나 프로젝트 주인이어야 함)
         boolean isAuthor = post.getAuthor().getId().equals(userId);
         boolean isProjectOwner = post.getProject().getOwner().getId().equals(userId);
 
@@ -110,8 +107,12 @@ public class BoardPostServiceImpl implements BoardPostService {
             throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED, "삭제 권한이 없습니다.");
         }
 
-        // 5. 삭제 수행
-        boardPostRepository.delete(post);
+        // 4. 해당 게시물의 댓글들도 함께 Soft Delete (중요!)
+        commentRepository.softDeleteAllByPostId(postId);
+
+        // 5. 게시글 본체 Soft Delete
+        boardPostRepository.softDeleteById(postId);
+
     }
 
     /**

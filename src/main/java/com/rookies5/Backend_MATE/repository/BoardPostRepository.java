@@ -15,9 +15,20 @@ public interface BoardPostRepository extends JpaRepository<BoardPost, Long> {
     // 프로젝트 ID로 게시글 ID 목록 조회 (댓글 삭제용)
     List<BoardPost> findAllByProjectId(Long projectId);
 
-    // 프로젝트 삭제 시 연관된 게시글 전체 삭제 (FK 제약 조건 해결)
-    // @Where soft delete 필터를 우회하기 위해 JPQL 사용
-    @Modifying
-    @Query("DELETE FROM BoardPost bp WHERE bp.project.id = :projectId")
-    void deleteAllByProjectId(@Param("projectId") Long projectId);
+    //프로젝트 삭제 -> 게시글 삭제
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE BoardPost b SET b.deletedAt = CURRENT_TIMESTAMP " +
+            "WHERE b.project.id = :projectId AND b.deletedAt IS NULL")
+    void softDeleteAllByProjectId(@Param("projectId") Long projectId);
+
+    // 게시글 삭제
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE BoardPost b SET b.deletedAt = CURRENT_TIMESTAMP WHERE b.id = :postId AND b.deletedAt IS NULL")
+    void softDeleteById(@Param("postId") Long postId);
+
+    //회원 탈퇴 -> 게시글 삭제
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE BoardPost b SET b.deletedAt = CURRENT_TIMESTAMP WHERE b.author.id = :userId AND b.deletedAt IS NULL")
+    void softDeleteAllByAuthorId(@Param("userId") Long userId);
+
 }

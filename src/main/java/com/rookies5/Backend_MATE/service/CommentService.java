@@ -2,6 +2,9 @@ package com.rookies5.Backend_MATE.service;
 
 import com.rookies5.Backend_MATE.dto.request.CommentRequestDto;
 import com.rookies5.Backend_MATE.dto.response.CommentResponseDto;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -18,4 +21,5 @@ public interface CommentService {
 
     // 4. 댓글 삭제 (userId 추가)
     void deleteComment(Long commentId, Long userId);
+
 }

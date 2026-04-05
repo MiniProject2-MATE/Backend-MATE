@@ -4,6 +4,7 @@ import com.rookies5.Backend_MATE.dto.request.UserRequestDto;
 import com.rookies5.Backend_MATE.dto.response.ApplicationResponseDto;
 import com.rookies5.Backend_MATE.dto.response.ProjectResponseDto;
 import com.rookies5.Backend_MATE.dto.response.UserResponseDto;
+import com.rookies5.Backend_MATE.entity.User;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -26,9 +27,10 @@ public interface UserService {
     UserResponseDto updateUser(Long userId, UserRequestDto requestDto);
 
     /**
-     * 4. 회원 탈퇴 (hard delete)
+     * 4. 회원 탈퇴 (soft-delete)
      */
-    void deleteUser(Long userId);
+    void deleteUser(Long userId, User currentUser);
+
 
     /**
      * 5. 닉네임 중복 체크 (수정 시 실시간 검증용)

@@ -112,40 +112,29 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     /**
-     * 5. 삭제 로직
-     * 삭제 순서: comments → board_posts → applications → project_members → projects
-     * (FK 제약 조건을 위반하지 않도록 자식 테이블부터 순서대로 삭제)
+     * 5. 삭제 로직 (Soft Delete 적용)
+     * 처리 순서: 자식 데이터(댓글, 게시글, 지원서) 상태 변경 -> 프로젝트 본체 상태 변경
      */
     @Override
-    public void deleteProject(Long projectId) {
+    @Transactional
+    public void deleteProject(Long projectId, Long userId) { // userId 파라미터 추가
+        // 1. 프로젝트 존재 확인
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.PROJECT_NOT_FOUND, projectId));
 
-        // [추가] 요청한 사용자가 프로젝트 방장인지 권한 검증
-        Long currentUserId = SecurityUtils.getCurrentUserId();
-        if (!project.getOwner().getId().equals(currentUserId)) {
+        // 2. 권한 검증 (넘겨받은 userId와 방장 ID 비교)
+        if (!project.getOwner().getId().equals(userId)) {
             throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED);
         }
 
-        // 1단계: 해당 프로젝트의 게시글에 달린 댓글 먼저 삭제
-        List<BoardPost> boardPosts = boardPostRepository.findAllByProjectId(projectId);
-        for (BoardPost post : boardPosts) {
-            commentRepository.deleteAll(
-                    commentRepository.findAllByPostIdOrderByCreatedAtAsc(post.getId())
-            );
-        }
+        // 3. 자식 리소스들 Soft Delete (벌크 업데이트 - 지호님이 짠 코드 그대로!)
+        commentRepository.softDeleteAllByProjectId(projectId);
+        boardPostRepository.softDeleteAllByProjectId(projectId);
+        applicationRepository.softDeleteAllByProjectId(projectId);
+        projectMemberRepository.softDeleteAllByProjectId(projectId);
 
-        // 2단계: 해당 프로젝트의 게시글 삭제
-        boardPostRepository.deleteAllByProjectId(projectId);
-
-        // 3단계: 해당 프로젝트의 지원서 삭제
-        applicationRepository.deleteAllByProjectId(projectId);
-
-        // 4단계: 해당 프로젝트의 팀원 삭제
-        projectMemberRepository.deleteAllByProjectId(projectId);
-
-        // 5단계: 프로젝트 삭제
-        projectRepository.delete(project);
+        // 4. 프로젝트 본체 Soft Delete
+        projectRepository.softDeleteById(projectId);
     }
 
     /**

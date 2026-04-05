@@ -123,8 +123,12 @@ public class UserController {
      */
     @DeleteMapping("/me")
     public SuccessResponse<Void> deleteUser(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        // 1. 로그에 탈퇴를 요청한 유저 ID 기록
         log.info("회원 탈퇴 요청 - ID: {}", userDetails.getId());
-        userService.deleteUser(userDetails.getId());
+
+        // 2. 서비스 호출 시 '탈퇴 대상 ID'와 '현재 로그인한 유저 객체'를 모두 넘깁니다.
+        userService.deleteUser(userDetails.getId(), userDetails.getUser());
+
         return new SuccessResponse<>("회원 탈퇴가 완료되었습니다.");
     }
 }

@@ -4,6 +4,7 @@ import com.rookies5.Backend_MATE.common.SuccessResponse;
 import com.rookies5.Backend_MATE.dto.request.ProjectRequestDto;
 import com.rookies5.Backend_MATE.dto.response.ProjectResponseDto;
 import com.rookies5.Backend_MATE.security.CustomUserDetails;
+import com.rookies5.Backend_MATE.security.SecurityUtils;
 import com.rookies5.Backend_MATE.service.ProjectService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -84,7 +85,14 @@ public class ProjectController {
     @DeleteMapping("/{projectId}")
     public SuccessResponse<Void> deleteProject(@PathVariable Long projectId) {
         log.info("프로젝트 삭제 요청 - projectId: {}", projectId);
-        projectService.deleteProject(projectId);
+
+        // 1. 현재 로그인한 유저의 ID를 가져옵니다. (기존에 쓰시던 SecurityUtils 활용)
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+
+        // 2. 서비스 호출 시 프로젝트 ID와 유저 ID를 함께 넘깁니다.
+        // 이제 ProjectService.deleteProject(Long, Long) 이므로 에러가 나지 않습니다.
+        projectService.deleteProject(projectId, currentUserId);
+
         return new SuccessResponse<>("프로젝트가 성공적으로 삭제되었습니다.");
     }
 

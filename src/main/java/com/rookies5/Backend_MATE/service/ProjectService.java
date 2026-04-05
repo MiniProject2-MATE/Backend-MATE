@@ -39,7 +39,7 @@ public interface ProjectService {
      * 프로젝트 삭제
      * @param projectId 삭제할 프로젝트 ID
      */
-    void deleteProject(Long projectId);
+    void deleteProject(Long projectId, Long userId);
 
     /**
      * 프로젝트 모집 수동 마감

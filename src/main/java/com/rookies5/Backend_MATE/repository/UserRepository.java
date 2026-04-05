@@ -4,6 +4,9 @@ import com.rookies5.Backend_MATE.entity.User;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
@@ -32,5 +35,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // 나(id)를 제외하고 해당 전화번호를 사용하는 사람이 있는지 확인 (마이페이지 수정용)
     boolean existsByPhoneNumberAndIdNot(String phoneNumber, Long id);
+
+    //회원 탈퇴
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE User u SET u.deletedAt = CURRENT_TIMESTAMP WHERE u.id = :userId AND u.deletedAt IS NULL")
+    void softDeleteById(@Param("userId") Long userId);
 
 }

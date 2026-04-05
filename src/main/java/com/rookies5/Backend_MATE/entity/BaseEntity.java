@@ -25,5 +25,15 @@ public abstract class BaseEntity {
     private LocalDateTime updatedAt;
 
     @Column(name = "deleted_at")
-    private LocalDateTime deletedAt; // Soft Delete 처리용 
+    private LocalDateTime deletedAt; // Soft Delete 처리용
+
+    // 모든 엔티티가 공통으로 사용할 삭제 로직
+    public void softDelete() {
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    // 삭제 여부 확인용 (편의 기능)
+    public boolean isDeleted() {
+        return this.deletedAt != null;
+    }
 }
