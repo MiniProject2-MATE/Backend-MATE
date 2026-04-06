@@ -66,18 +66,19 @@ public class SecurityConfig {
 
                 // API 명세서 기반 권한 맵핑
                 .authorizeHttpRequests(auth -> auth
-                        // GUEST (누구나 접근 가능 API)
+                        // 1. 누구나 접근 가능 (GUEST)
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/posts", "/api/posts/{id}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users/check-phone", "/api/users/check-nickname").permitAll()
 
-                        // 💡 관리자 페이지(Thymeleaf) 접근 허용 (이전에 발생했던 302 리다이렉트 방지)
-                        .requestMatchers("/admin/signup", "/admin/login").permitAll()
+                        // 프로젝트 목록/상세 조회 허용
+                        .requestMatchers(HttpMethod.GET, "/api/projects/**").permitAll()
 
-                        // ADMIN (관리자 전용 API)
+                        // 3. 관리자 페이지 및 기타 설정들...
+                        .requestMatchers("/admin/signup", "/admin/login").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
 
-                        // 나머지 모든 요청은 USER 이상 (토큰 필수)
+                        // 나머지는 로그인 필수
                         .anyRequest().authenticated()
                 );
 
