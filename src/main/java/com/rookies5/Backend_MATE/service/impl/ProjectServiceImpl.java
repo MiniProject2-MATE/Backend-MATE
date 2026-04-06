@@ -19,7 +19,7 @@ import com.rookies5.Backend_MATE.repository.CommentRepository;
 import com.rookies5.Backend_MATE.repository.ProjectMemberRepository;
 import com.rookies5.Backend_MATE.repository.ProjectRepository;
 import com.rookies5.Backend_MATE.repository.UserRepository;
-import com.rookies5.Backend_MATE.security.SecurityUtils; // [추가]
+import com.rookies5.Backend_MATE.security.SecurityUtils;
 import com.rookies5.Backend_MATE.service.ProjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -80,30 +80,37 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     /**
-     * 3. 전체 목록 조회 (카테고리 & 키워드 필터링 추가)
+     * 3. 전체 목록 조회 (카테고리 & 키워드 & 기술 스택 필터링 추가)
      */
     @Transactional(readOnly = true)
     @Override
     public List<ProjectResponseDto> getAllProjects(String category, String keyword) {
         return projectRepository.findAll().stream()
-                // 💡 1차 필터링: 카테고리
+                // 💡 1차 필터링: 삭제되지 않은 프로젝트만 조회
+                .filter(project -> project.getDeletedAt() == null)
+                // 💡 2차 필터링: 카테고리
                 .filter(project -> {
                     if (category != null && !category.trim().isEmpty()) {
                         return project.getCategory() != null &&
                                 project.getCategory().toString().equalsIgnoreCase(category);
                     }
-                    return true; // 카테고리 파라미터가 없으면 모두 통과
+                    return true;
                 })
-                // 💡 2차 필터링: 키워드 (제목 또는 내용에 포함되어 있는지)
+                // 💡 3차 필터링: 키워드 (제목, 내용, 기술 스택) + 대소문자 무시
                 .filter(project -> {
                     if (keyword != null && !keyword.trim().isEmpty()) {
-                        boolean matchTitle = project.getTitle() != null && project.getTitle().contains(keyword);
-                        boolean matchContent = project.getContent() != null && project.getContent().contains(keyword);
-                        return matchTitle || matchContent;
+                        String lowerKeyword = keyword.toLowerCase();
+
+                        boolean matchTitle = project.getTitle() != null && project.getTitle().toLowerCase().contains(lowerKeyword);
+                        boolean matchContent = project.getContent() != null && project.getContent().toLowerCase().contains(lowerKeyword);
+
+                        boolean matchTechStack = project.getTechStacks() != null && project.getTechStacks().stream()
+                                .anyMatch(ts -> ts.toLowerCase().contains(lowerKeyword));
+
+                        return matchTitle || matchContent || matchTechStack;
                     }
-                    return true; // 키워드 파라미터가 없으면 모두 통과
+                    return true;
                 })
-                // DTO 변환 후 리스트로 묶기
                 .map(ProjectMapper::mapToResponse)
                 .collect(Collectors.toList());
     }
