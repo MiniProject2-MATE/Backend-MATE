@@ -5,6 +5,7 @@ import com.rookies5.Backend_MATE.dto.response.AuthResponseDto;
 import com.rookies5.Backend_MATE.dto.response.UserResponseDto;
 import com.rookies5.Backend_MATE.entity.RefreshToken;
 import com.rookies5.Backend_MATE.entity.User;
+import com.rookies5.Backend_MATE.entity.enums.TechStack; // 👈 추가
 import com.rookies5.Backend_MATE.exception.BusinessException;
 import com.rookies5.Backend_MATE.exception.EntityNotFoundException;
 import com.rookies5.Backend_MATE.exception.ErrorCode;
@@ -49,13 +50,23 @@ public class AuthServiceImpl implements AuthService {
         isEmailAvailable(requestDto.getEmail());
         isPhoneAvailable(requestDto.getPhoneNumber(), null);
 
+        // ✅ 기술 스택 유효성 검증 로직 추가 (프론트엔드 목록과 동기화)
+        if (requestDto.getTechStacks() != null && !requestDto.getTechStacks().isEmpty()) {
+            for (String tech : requestDto.getTechStacks()) {
+                if (!TechStack.isValid(tech)) {
+                    log.warn("회원가입 시 지원하지 않는 기술 스택 요청: {}", tech);
+                    throw new BusinessException(ErrorCode.VALIDATION_ERROR, "지원하지 않는 기술 스택이 포함되어 있습니다: " + tech); // 👈 INVALID_REQUEST → VALIDATION_ERROR
+                }
+            }
+        }
+
         // 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(requestDto.getPassword());
         requestDto.setPassword(encodedPassword);
 
         // 1. 기존 파일 저장 로직 삭제 및 기본 이미지 할당
         String defaultImgUrl = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
-        requestDto.setProfileImg(defaultImgUrl );
+        requestDto.setProfileImg(defaultImgUrl  );
         log.info("회원가입 기본 프로필 이미지 세팅 완료");
 
         // 2. 닉네임 미입력 시 이메일 기반 자동 할당 (기존 로직 유지)
