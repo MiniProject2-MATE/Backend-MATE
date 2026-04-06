@@ -3,11 +3,14 @@ package com.rookies5.Backend_MATE.repository;
 import com.rookies5.Backend_MATE.entity.User;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 // JpaRepository<조종할 Entity 클래스, 그 Entity의 PK 데이터 타입>
@@ -40,5 +43,20 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Modifying(clearAutomatically = true)
     @Query("UPDATE User u SET u.deletedAt = CURRENT_TIMESTAMP WHERE u.id = :userId AND u.deletedAt IS NULL")
     void softDeleteById(@Param("userId") Long userId);
+
+    // UserRepository 및 ProjectRepository 공통 필요 메서드 예시
+    @Query(value = "SELECT * FROM users",
+            countQuery = "SELECT count(*) FROM users",
+            nativeQuery = true)
+    Page<User> findAllIncludingDeleted(Pageable pageable);
+
+    @Query(value = "SELECT * FROM users WHERE user_id = :id", nativeQuery = true)
+    Optional<User> findByIdIncludingDeleted(@Param("id") Long id);
+
+    @Query(value = "SELECT count(*) FROM users", nativeQuery = true)
+    long countIncludingDeleted();
+
+    @Query(value = "SELECT * FROM users", nativeQuery = true)
+    List<User> findAllIncludingDeletedList();
 
 }
