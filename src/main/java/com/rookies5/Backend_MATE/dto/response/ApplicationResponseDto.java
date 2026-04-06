@@ -11,6 +11,7 @@ public class ApplicationResponseDto {
     private Long id;            // 지원서 ID (application_id)
     private Long projectId;     // 이동을 위한 원본 게시글 ID
     private String projectTitle; // 리스트에 보여줄 게시글 제목 (추가!)
+    private String category;
 
     private Long applicantId;
     private String message;
