@@ -11,19 +11,17 @@ public class ApplicationMapper {
 
     /**
      * Entity -> Response DTO 변환 (조회용)
-     * ★ 수정 포인트: 리스트에 표시할 프로젝트 제목(projectTitle)을 추가합니다.
      */
     public static ApplicationResponseDto mapToApplicationResponse(Application application) {
         return ApplicationResponseDto.builder()
                 .id(application.getId())
                 .projectId(application.getProject().getId())
-                // ★ 지원 내역 탭에서 보여줄 프로젝트 제목 추가!
                 .projectTitle(application.getProject().getTitle())
                 .applicantId(application.getApplicant().getId())
                 .applicantNickname(application.getApplicant().getNickname())
-                // ✅ 수정: 유저 프로필 포지션이 아닌 지원서에 저장된 포지션 출력
                 .applicantPosition(application.getPosition() != null ?
                         application.getPosition().name() : null)
+                .techStacks(application.getApplicant().getTechStacks())
                 .message(application.getMessage())
                 .status(application.getStatus())
                 .createdAt(application.getAppliedAt())

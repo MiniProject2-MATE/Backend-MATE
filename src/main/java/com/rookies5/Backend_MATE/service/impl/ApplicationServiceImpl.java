@@ -17,7 +17,7 @@ import com.rookies5.Backend_MATE.repository.ApplicationRepository;
 import com.rookies5.Backend_MATE.repository.ProjectMemberRepository;
 import com.rookies5.Backend_MATE.repository.ProjectRepository;
 import com.rookies5.Backend_MATE.repository.UserRepository;
-import com.rookies5.Backend_MATE.security.SecurityUtils; // [추가]
+import com.rookies5.Backend_MATE.security.SecurityUtils;
 import com.rookies5.Backend_MATE.service.ApplicationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -87,7 +87,7 @@ public class ApplicationServiceImpl implements ApplicationService {
             throw new EntityNotFoundException(ErrorCode.PROJECT_NOT_FOUND, projectId);
         }
 
-        return applicationRepository.findAllByProjectId(projectId).stream()
+        return applicationRepository.findAllByProjectIdWithTechStacks(projectId).stream()
                 .map(ApplicationMapper::mapToApplicationResponse)
                 .collect(Collectors.toList());
     }
@@ -100,7 +100,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         Application application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.APPLY_NOT_FOUND, applicationId));
 
-        // [추가] 지원자 본인만 취소 가능하도록 권한 검증
+        // 지원자 본인만 취소 가능하도록 권한 검증
         Long currentUserId = SecurityUtils.getCurrentUserId();
         if (!application.getApplicant().getId().equals(currentUserId)) {
             throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED);
@@ -133,7 +133,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         Application application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.APPLY_NOT_FOUND, applicationId));
 
-        // [추가] 해당 프로젝트의 방장만 승인 가능
+        // 해당 프로젝트의 방장만 승인 가능
         Long currentUserId = SecurityUtils.getCurrentUserId();
         if (!application.getProject().getOwner().getId().equals(currentUserId)) {
             throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED);
@@ -180,7 +180,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         Application application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.APPLY_NOT_FOUND, applicationId));
 
-        // [추가] 해당 프로젝트의 방장만 거절 가능
+        // 해당 프로젝트의 방장만 거절 가능
         Long currentUserId = SecurityUtils.getCurrentUserId();
         if (!application.getProject().getOwner().getId().equals(currentUserId)) {
             throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED);

@@ -13,6 +13,13 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     // 프로젝트 ID로 지원서 목록 찾기
     List<Application> findAllByProjectId(Long projectId);
 
+    // N+1 문제 방지를 위해 지원자와 기술스택을 한 번에 가져오는 최적화 메서드
+    @Query("SELECT DISTINCT a FROM Application a " +
+            "JOIN FETCH a.applicant u " +
+            "LEFT JOIN FETCH u.techStacks " +
+            "WHERE a.project.id = :projectId")
+    List<Application> findAllByProjectIdWithTechStacks(@Param("projectId") Long projectId);
+
     boolean existsByProjectIdAndApplicantId(Long projectId, Long applicantId);
 
     // 내 프로젝트/스터디 조회: 내가 신청했고, 상태가 ACCEPTED인 것만
