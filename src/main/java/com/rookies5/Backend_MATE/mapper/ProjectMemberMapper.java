@@ -20,6 +20,7 @@ public class ProjectMemberMapper {
 
                 // 💡 지호 님이 강조한 '닉네임'과 '포지션'만 쏙쏙! (프사는 삭제)
                 .nickname(member.getUser().getNickname())
+                .profileImg(member.getUser().getProfileImg())
                 .position(member.getPosition()) // ✅ 수정: member.getUser().getPosition() -> member.getPosition()
                 .build();
     }
