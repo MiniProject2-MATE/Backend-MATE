@@ -161,6 +161,7 @@ public class ApplicationServiceImpl implements ApplicationService {
                 .project(project)
                 .user(application.getApplicant())
                 .role(MemberRole.MEMBER)
+                .position(application.getPosition()) // ✅ 핵심: 지원서의 포지션을 새 멤버 정보로 복사
                 .build();
         projectMemberRepository.save(newMember);
 
@@ -169,6 +170,7 @@ public class ApplicationServiceImpl implements ApplicationService {
 
         return ApplicationMapper.mapToApplicationResponse(application);
     }
+
 
     /**
      * 6. 지원서 거절 (방장용)

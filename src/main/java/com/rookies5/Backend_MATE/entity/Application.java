@@ -1,6 +1,7 @@
 package com.rookies5.Backend_MATE.entity;
 
 import com.rookies5.Backend_MATE.entity.enums.ApplicationStatus;
+import com.rookies5.Backend_MATE.entity.enums.Position;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -36,6 +37,11 @@ public class Application extends BaseEntity{
     @NotBlank
     @Size(min = 10, max = 500, message = "지원 동기는 10~500자 사이여야 합니다")
     private String message;
+
+    // ✅ 추가: 해당 지원서에서 선택한 포지션 저장
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private Position position;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)

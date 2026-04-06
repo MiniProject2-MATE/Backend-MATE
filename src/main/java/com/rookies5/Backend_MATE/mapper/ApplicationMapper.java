@@ -11,7 +11,7 @@ public class ApplicationMapper {
 
     /**
      * Entity -> Response DTO 변환 (조회용)
-     * ★ 수정 포인트: 리스트에 표시할 프로젝트 제목(projectTitle) 및 카테고리(category)를 추가합니다.
+     * ★ 수정 포인트: 리스트에 표시할 프로젝트 제목(projectTitle)을 추가합니다.
      */
     public static ApplicationResponseDto mapToApplicationResponse(Application application) {
         return ApplicationResponseDto.builder()
@@ -19,15 +19,12 @@ public class ApplicationMapper {
                 .projectId(application.getProject().getId())
                 // ★ 지원 내역 탭에서 보여줄 프로젝트 제목 추가!
                 .projectTitle(application.getProject().getTitle())
-                // ★ 마이페이지 필터링을 위한 카테고리 추가 (String 변환)
-                .category(application.getProject().getCategory() != null ?
-                        application.getProject().getCategory().name() : null)
                 .applicantId(application.getApplicant().getId())
                 .applicantNickname(application.getApplicant().getNickname())
-                .applicantPosition(application.getApplicant().getPosition() != null ?
-                        application.getApplicant().getPosition().name() : null)
+                // ✅ 수정: 유저 프로필 포지션이 아닌 지원서에 저장된 포지션 출력
+                .applicantPosition(application.getPosition() != null ?
+                        application.getPosition().name() : null)
                 .message(application.getMessage())
-                // 💡 에러 해결 지점: .name()을 빼고 Enum 객체 자체를 전달합니다.
                 .status(application.getStatus())
                 .createdAt(application.getAppliedAt())
                 .build();
@@ -41,6 +38,7 @@ public class ApplicationMapper {
                 .project(project)
                 .applicant(applicant)
                 .message(requestDto.getMessage())
+                .position(requestDto.getPosition()) // ✅ 추가: DTO의 포지션을 Entity에 매핑
                 .status(ApplicationStatus.PENDING)
                 .build();
     }

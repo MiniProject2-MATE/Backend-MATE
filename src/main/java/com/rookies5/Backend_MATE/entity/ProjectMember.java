@@ -1,6 +1,7 @@
 package com.rookies5.Backend_MATE.entity;
 
 import com.rookies5.Backend_MATE.entity.enums.MemberRole;
+import com.rookies5.Backend_MATE.entity.enums.Position;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Where;
@@ -36,6 +37,11 @@ public class ProjectMember extends BaseEntity{
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private MemberRole role;
+
+    // ✅ 추가: 해당 프로젝트에서 맡은 포지션
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private Position position;
 
     @CreatedDate
     @Column(name = "joined_at", nullable = false, updatable = false)
