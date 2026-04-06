@@ -15,7 +15,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/posts") // 게시글 하위 리소스로 변경
+@RequestMapping("/api/posts") // 기본 경로는 그대로 유지
 @RequiredArgsConstructor
 public class CommentController {
 
@@ -23,17 +23,18 @@ public class CommentController {
 
     /**
      * 1. 댓글 작성
-     * POST /api/posts/{postId}/comments
+     * 프론트엔드 요청 규격에 맞춰 /{projectId}/board/{postId}/comments 로 수정
      */
-    @PostMapping("/{postId}/comments")
+    @PostMapping("/{projectId}/board/{postId}/comments")
     public SuccessResponse<CommentResponseDto> createComment(
+            @PathVariable Long projectId, // 프론트에서 넘어오는 projectId 받기
             @PathVariable Long postId,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody CommentRequestDto requestDto) {
 
-        log.info("댓글 작성 요청 - postId: {}, userId: {}", postId, userDetails.getId());
+        log.info("댓글 작성 요청 - projectId: {}, postId: {}, userId: {}", projectId, postId, userDetails.getId());
 
-        // 서비스에 postId, userId, DTO 전달
+        // 서비스에는 기존처럼 postId, userId, DTO 전달
         CommentResponseDto responseDto = commentService.createComment(postId, userDetails.getId(), requestDto);
 
         return new SuccessResponse<>("댓글이 성공적으로 작성되었습니다.", responseDto);
@@ -41,14 +42,15 @@ public class CommentController {
 
     /**
      * 2. 특정 게시글의 모든 댓글 조회
-     * GET /api/posts/{postId}/comments
+     * 프론트엔드 요청 규격에 맞춰 /{projectId}/board/{postId}/comments 로 수정
      */
-    @GetMapping("/{postId}/comments")
+    @GetMapping("/{projectId}/board/{postId}/comments")
     public SuccessResponse<List<CommentResponseDto>> getCommentsByPostId(
+            @PathVariable Long projectId, // 프론트에서 넘어오는 projectId 받기
             @PathVariable Long postId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        log.info("게시글 댓글 목록 조회 요청 - postId: {}, userId: {}", postId, userDetails.getId());
+        log.info("게시글 댓글 목록 조회 요청 - projectId: {}, postId: {}, userId: {}", projectId, postId, userDetails.getId());
 
         // 멤버 검증을 위해 userId도 함께 전달
         List<CommentResponseDto> responseDtoList = commentService.getCommentsByPostId(postId, userDetails.getId());
@@ -58,7 +60,6 @@ public class CommentController {
 
     /**
      * 3. 댓글 수정
-     * PUT /api/posts/comments/{commentId}
      */
     @PutMapping("/comments/{commentId}")
     public SuccessResponse<CommentResponseDto> updateComment(
@@ -75,7 +76,6 @@ public class CommentController {
 
     /**
      * 4. 댓글 삭제
-     * DELETE /api/posts/comments/{commentId}
      */
     @DeleteMapping("/comments/{commentId}")
     public SuccessResponse<Void> deleteComment(
