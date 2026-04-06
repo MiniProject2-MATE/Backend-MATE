@@ -216,7 +216,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
-     * 토큰 재발급 로직 (Access Token 만료 시)
+     * 8. 토큰 재발급 로직 (Access Token 만료 시)
      */
     @Override
     @Transactional
@@ -256,14 +256,18 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
-     *  로그아웃 (리프레시 토큰 삭제)
+     * 9. 로그아웃 (리프레시 토큰 삭제)
+     * ✅ email을 받아서 Service 내부에서 유저를 직접 찾아 처리 (Controller에서 DB 조회 제거)
      */
     @Override
     @Transactional
-    public void logout(Long userId) {
+    public void logout(String email) {
+        // ✅ DB 조회 책임을 Service로 이동
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         // DB에서 해당 유저의 리프레시 토큰을 삭제하여 더 이상 토큰 갱신을 못하게 막음
-        refreshTokenRepository.deleteByUserId(userId);
-        log.info("유저 ID: {} 로그아웃 및 리프레시 토큰 삭제 완료", userId);
+        refreshTokenRepository.deleteByUserId(user.getId());
+        log.info("유저 ID: {} 로그아웃 및 리프레시 토큰 삭제 완료", user.getId());
     }
 
     private String generateTempPassword() {
