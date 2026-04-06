@@ -79,10 +79,15 @@ public class User extends BaseEntity {
         this.profileImg = profileImg;
     }
 
-    public void updateProfile(String nickname, com.rookies5.Backend_MATE.entity.enums.Position position, java.util.Set<String> techStacks, String phoneNumber) {
+    public void updateProfile(String nickname, Position position, Set<String> techStacks, String phoneNumber, String encodedPassword) {
         if (nickname != null) this.nickname = nickname;
         if (position != null) this.position = position;
         if (techStacks != null) this.techStacks = techStacks;
         if (phoneNumber != null) this.phoneNumber = phoneNumber;
+
+        // 비밀번호가 들어왔을 때만 변경 (프론트에서 수정을 원할 때만)
+        if (encodedPassword != null && !encodedPassword.isBlank()) {
+            this.password = encodedPassword;
+        }
     }
 }

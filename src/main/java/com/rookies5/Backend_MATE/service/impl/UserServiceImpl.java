@@ -20,6 +20,7 @@ import com.rookies5.Backend_MATE.service.ProjectService;
 import com.rookies5.Backend_MATE.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -42,6 +43,7 @@ public class UserServiceImpl implements UserService {
     private final ApplicationRepository applicationRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final ProjectMemberRepository projectMemberRepository;
+    private final PasswordEncoder passwordEncoder;
     private final String uploadPath = System.getProperty("user.home") + "/mate_uploads/profiles/";
 
     private static final String DEFAULT_PROFILE_IMG = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
@@ -88,12 +90,19 @@ public class UserServiceImpl implements UserService {
             }
         }
 
-        // 3. 엔티티 메서드 호출
+        // 2. 비밀번호 암호화 준비
+        String encodedPassword = null;
+        if (requestDto.getPassword() != null && !requestDto.getPassword().isBlank()) {
+            encodedPassword = passwordEncoder.encode(requestDto.getPassword());
+        }
+
+        // 3. 엔티티 메서드 딱 하나만 호출해서 전부 수정!
         user.updateProfile(
                 requestDto.getNickname(),
                 requestDto.getPosition(),
                 requestDto.getTechStacks(),
-                requestDto.getPhoneNumber()
+                requestDto.getPhoneNumber(),
+                encodedPassword
         );
 
         return UserMapper.mapToUserResponse(user);
