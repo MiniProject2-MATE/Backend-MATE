@@ -24,6 +24,7 @@ public class ApplicationMapper {
                 .applicantPosition(application.getPosition() != null ?
                         application.getPosition().name() : null)
                 .techStacks(application.getApplicant().getTechStacks())
+                .profileImg(application.getApplicant().getProfileImg())
                 .message(application.getMessage())
                 .status(application.getStatus())
                 .createdAt(application.getAppliedAt())

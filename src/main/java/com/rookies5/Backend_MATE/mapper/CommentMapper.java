@@ -20,6 +20,7 @@ public class CommentMapper {
                 .authorNickname(comment.getAuthor().getNickname()) // 작성자 닉네임 매핑
                 .content(comment.getContent())
                 .createdAt(comment.getCreatedAt())
+                .authorProfileImg(comment.getAuthor().getProfileImg())
                 .build();
     }
 
