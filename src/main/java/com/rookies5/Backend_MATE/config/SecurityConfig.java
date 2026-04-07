@@ -94,7 +94,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         // 프론트엔드 주소 허용
-        configuration.setAllowedOrigins(List.of("http://localhost:5173","https://d6b1-59-6-206-18.ngrok-free.app"));
+        configuration.setAllowedOrigins(List.of("http://localhost:5173","https://d34b-59-6-206-18.ngrok-free.app"));
 
         // 허용할 HTTP 메서드 (GET, POST 등)
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));

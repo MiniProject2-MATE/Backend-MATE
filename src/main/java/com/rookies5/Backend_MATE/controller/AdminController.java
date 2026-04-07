@@ -73,7 +73,7 @@ public class AdminController {
                 .map(ProjectMapper::mapToResponse);
 
         // 로그 페이징 (최신순)
-        Pageable logPageable = PageRequest.of(logPage, PAGE_SIZE, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Pageable logPageable = PageRequest.of(logPage, 10, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<AdminLog> logs = adminLogRepository.findAll(logPageable);
 
         model.addAttribute("userCount", userRepository.countIncludingDeleted());
@@ -204,6 +204,7 @@ public class AdminController {
     @PostMapping("/projects/restore/{id}")
     public String restoreProject(@PathVariable Long id,
                                  @RequestParam(defaultValue = "0") int projectPage,
+                                 @RequestParam(required = false) String keyword,
                                  @RequestParam(required = false) String redirectPage) {
 
         Project project = projectRepository.findByIdIncludingDeleted(id)
@@ -224,27 +225,81 @@ public class AdminController {
     public String search(@RequestParam String keyword,
                          @RequestParam(defaultValue = "0") int userPage,
                          @RequestParam(defaultValue = "0") int projectPage,
+                         @RequestParam(defaultValue = "0") int logPage,
                          @RequestParam(required = false, defaultValue = "dashboard") String redirectPage,
                          Model model) {
 
-        // 회원 검색
-        List<UserResponseDto> userList = userRepository.findAllIncludingDeletedList().stream()
-                .filter(u -> u.getNickname().contains(keyword) || u.getEmail().contains(keyword))
-                .map(user -> {
-                    UserResponseDto dto = UserMapper.mapToUserResponse(user);
-                    dto.setDeleted(user.getDeletedAt() != null);
-                    return dto;
-                })
-                .toList();
-        Page<UserResponseDto> users = new PageImpl<>(userList, PageRequest.of(userPage, PAGE_SIZE), userList.size());
+        // -----------------------------
+        // 1️⃣ 회원 검색
+        // -----------------------------
+        Page<UserResponseDto> users;
+        if (keyword == null || keyword.isBlank()) {
+            users = userRepository.findAllIncludingDeleted(PageRequest.of(userPage, PAGE_SIZE))
+                    .map(u -> {
+                        UserResponseDto dto = UserMapper.mapToUserResponse(u);
+                        dto.setDeleted(u.getDeletedAt() != null);
+                        return dto;
+                    });
+        } else {
+            List<UserResponseDto> userList = userRepository.findAllIncludingDeletedList().stream()
+                    .filter(u -> u.getNickname().contains(keyword) || u.getEmail().contains(keyword))
+                    .map(u -> {
+                        UserResponseDto dto = UserMapper.mapToUserResponse(u);
+                        dto.setDeleted(u.getDeletedAt() != null);
+                        return dto;
+                    })
+                    .toList();
 
-        // 프로젝트 검색
-        List<ProjectResponseDto> projectList = projectRepository.findAllIncludingDeletedList().stream()
-                .filter(p -> p.getTitle().contains(keyword))
-                .map(ProjectMapper::mapToResponse)
-                .toList();
-        Page<ProjectResponseDto> projects = new PageImpl<>(projectList, PageRequest.of(projectPage, PAGE_SIZE), projectList.size());
+            // 🔹 페이징 적용
+            int start = Math.min(userPage * PAGE_SIZE, userList.size());
+            int end = Math.min(start + PAGE_SIZE, userList.size());
+            List<UserResponseDto> pageContent = userList.subList(start, end);
+            users = new PageImpl<>(pageContent, PageRequest.of(userPage, PAGE_SIZE), userList.size());
+        }
 
+        // -----------------------------
+        // 2️⃣ 프로젝트 검색 (제목 + 작성자)
+        // -----------------------------
+        Page<ProjectResponseDto> projects;
+        if (keyword == null || keyword.isBlank()) {
+            projects = projectRepository.findAllIncludingDeleted(PageRequest.of(projectPage, PAGE_SIZE))
+                    .map(ProjectMapper::mapToResponse);
+        } else {
+            List<ProjectResponseDto> projectList = projectRepository.findAllIncludingDeletedList().stream()
+                    .filter(p -> p.getTitle().contains(keyword) ||
+                            (p.getOwner() != null && p.getOwner().getNickname().contains(keyword)))
+                    .map(ProjectMapper::mapToResponse)
+                    .toList();
+
+            // 🔹 페이징 적용
+            int startP = Math.min(projectPage * PAGE_SIZE, projectList.size());
+            int endP = Math.min(startP + PAGE_SIZE, projectList.size());
+            List<ProjectResponseDto> projectPageContent = projectList.subList(startP, endP);
+            projects = new PageImpl<>(projectPageContent, PageRequest.of(projectPage, PAGE_SIZE), projectList.size());
+        }
+
+        // -----------------------------
+        // 3️⃣ 로그 검색
+        // -----------------------------
+        Page<AdminLog> logs;
+        int LOG_PAGE_SIZE = 10;
+        if (keyword == null || keyword.isBlank()) {
+            logs = adminLogRepository.findAll(PageRequest.of(logPage, LOG_PAGE_SIZE, Sort.by(Sort.Direction.DESC, "createdAt")));
+        } else {
+            List<AdminLog> logList = adminLogRepository.findAll().stream()
+                    .filter(l -> l.getAction().contains(keyword))
+                    .toList();
+
+            // 🔹 페이징 적용
+            int startL = Math.min(logPage * LOG_PAGE_SIZE, logList.size());
+            int endL = Math.min(startL + LOG_PAGE_SIZE, logList.size());
+            List<AdminLog> logPageContent = logList.subList(startL, endL);
+            logs = new PageImpl<>(logPageContent, PageRequest.of(logPage, LOG_PAGE_SIZE), logList.size());
+        }
+
+        // -----------------------------
+        // 화면 선택
+        // -----------------------------
         if ("users".equals(redirectPage)) {
             model.addAttribute("users", users);
             model.addAttribute("keyword", keyword);
@@ -258,9 +313,6 @@ public class AdminController {
         }
 
         // 대시보드 검색
-        Pageable logPageable = PageRequest.of(0, PAGE_SIZE, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<AdminLog> logs = adminLogRepository.findAll(logPageable);
-
         model.addAttribute("userCount", userRepository.countIncludingDeleted());
         model.addAttribute("projectCount", projectRepository.countIncludingDeleted());
         model.addAttribute("users", users);
