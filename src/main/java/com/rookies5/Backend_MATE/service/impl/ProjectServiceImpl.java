@@ -204,9 +204,10 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional(readOnly = true)
     public List<ProjectResponseDto> getMyJoinedProjects(Long userId) {
-        return applicationRepository.findAllByApplicantIdAndStatus(userId, ApplicationStatus.ACCEPTED)
-                .stream()
-                .map(app -> ProjectMapper.mapToResponse(app.getProject(), userId))
+        return projectMemberRepository.findAllByUserId(userId).stream()
+                // 필터 추가: 강퇴당한(Soft Delete된) 멤버는 목록에서 제거!
+                .filter(member -> member.getDeletedAt() == null)
+                .map(member -> ProjectMapper.mapToResponse(member.getProject(), userId))
                 .collect(Collectors.toList());
     }
 

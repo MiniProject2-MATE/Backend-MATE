@@ -1,6 +1,7 @@
 package com.rookies5.Backend_MATE.dto.response;
 
 import com.rookies5.Backend_MATE.entity.enums.ApplicationStatus;
+import com.rookies5.Backend_MATE.entity.Application;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -25,4 +26,18 @@ public class ApplicationResponseDto {
 
     private ApplicationStatus status;
     private LocalDateTime createdAt;
+
+    public static ApplicationResponseDto from(Application application) {
+        return ApplicationResponseDto.builder()
+                .id(application.getId())
+                .projectId(application.getProject().getId())
+                .projectTitle(application.getProject().getTitle())
+                .category(application.getProject().getCategory().name()) // Enum일 경우 .name()
+                .applicantId(application.getApplicant().getId())
+                .message(application.getMessage())
+                .applicantNickname(application.getApplicant().getNickname())
+                .status(application.getStatus())
+                .createdAt(application.getCreatedAt())
+                .build();
+    }
 }
