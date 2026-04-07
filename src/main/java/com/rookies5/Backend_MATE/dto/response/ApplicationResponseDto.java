@@ -36,6 +36,9 @@ public class ApplicationResponseDto {
                 .applicantId(application.getApplicant().getId())
                 .message(application.getMessage())
                 .applicantNickname(application.getApplicant().getNickname())
+                // 이 부분을 추가해야 화면에 '지원 분야'가 정상적으로 나옵니다!
+                .applicantPosition(application.getPosition() != null ? application.getPosition().name() : "선택없음")
+
                 .status(application.getStatus())
                 .createdAt(application.getCreatedAt())
                 .build();
