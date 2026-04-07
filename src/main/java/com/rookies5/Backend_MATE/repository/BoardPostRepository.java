@@ -6,10 +6,15 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 public interface BoardPostRepository extends JpaRepository<BoardPost, Long> {
-    // 프로젝트 ID로 게시글 찾기 + 작성일 최신순 정렬
+    // 프로젝트 ID로 게시글 찾기 (페이징 지원)
+    Page<BoardPost> findAllByProjectId(Long projectId, Pageable pageable);
+
+    // 기존: 프로젝트 ID로 게시글 찾기 + 작성일 최신순 정렬
     List<BoardPost> findAllByProjectIdOrderByCreatedAtDesc(Long projectId);
 
     // 프로젝트 ID로 게시글 ID 목록 조회 (댓글 삭제용)

@@ -3,6 +3,8 @@ package com.rookies5.Backend_MATE.service;
 import com.rookies5.Backend_MATE.dto.request.ProjectRequestDto;
 import com.rookies5.Backend_MATE.dto.response.ProjectResponseDto;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 public interface ProjectService {
@@ -23,10 +25,10 @@ public interface ProjectService {
     ProjectResponseDto getProjectById(Long projectId);
 
     /**
-     * 전체 프로젝트 목록 조회
-     * @return 메인 페이지나 목록에 뿌려줄 프로젝트 리스트
+     * 전체 프로젝트 목록 조회 (페이징 지원)
+     * @return 메인 페이지나 목록에 뿌려줄 프로젝트 페이징 결과
      */
-    List<ProjectResponseDto> getAllProjects(String category, String keyword);
+    Page<ProjectResponseDto> getAllProjects(String category, String keyword, Pageable pageable);
 
     /**
      * 프로젝트 정보 수정

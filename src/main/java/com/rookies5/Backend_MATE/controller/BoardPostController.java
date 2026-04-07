@@ -11,6 +11,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import com.rookies5.Backend_MATE.dto.common.PageResponseDto;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import java.util.List;
 
 @Slf4j
@@ -42,19 +47,24 @@ public class BoardPostController {
     }
 
     /**
-     * 특정 프로젝트의 모든 게시글 조회
+     * 특정 프로젝트의 게시글 페이징 조회
      */
     @GetMapping("/{projectId}/board")
-    public SuccessResponse<List<BoardPostResponseDto>> getPostsByProjectId(
+    public SuccessResponse<PageResponseDto<BoardPostResponseDto>> getPostsByProjectId(
             @PathVariable Long projectId,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PageableDefault(size = 15, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        log.info("프로젝트 게시글 목록 조회 요청 - projectId: {}, userId: {}", projectId, userDetails.getId());
+        log.info("프로젝트 게시글 목록 조회 요청 - projectId: {}, userId: {}, page: {}, size: {}", 
+                projectId, userDetails.getId(), pageable.getPageNumber(), pageable.getPageSize());
 
-        // Service의 getPostsByProjectId(projectId, userId) 형식에 맞춤
-        List<BoardPostResponseDto> responseDtoList = boardPostService.getPostsByProjectId(projectId, userDetails.getId());
+        // 1. 서비스에서 Page 객체를 받아옵니다.
+        Page<BoardPostResponseDto> responseDtoPage = boardPostService.getPostsByProjectId(projectId, userDetails.getId(), pageable);
 
-        return new SuccessResponse<>("게시글 목록 조회가 완료되었습니다.", responseDtoList);
+        // 2. 프론트엔드(BoardPage.jsx)가 원하는 data.page 구조로 감싸서(Wrap) 반환합니다.
+        PageResponseDto<BoardPostResponseDto> wrappedResponse = new PageResponseDto<>(responseDtoPage);
+
+        return new SuccessResponse<>("게시글 목록 조회가 완료되었습니다.", wrappedResponse);
     }
 
     /**

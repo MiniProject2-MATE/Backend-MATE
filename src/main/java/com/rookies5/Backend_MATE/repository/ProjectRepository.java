@@ -49,4 +49,8 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
 
     @Query(value = "SELECT * FROM projects", nativeQuery = true)
     List<Project> findAllIncludingDeletedList();
+
+    // ✅ 추가: 삭제되지 않은 프로젝트 전체 페이징 조회 (최신순)
+    @Query("SELECT p FROM Project p WHERE p.deletedAt IS NULL")
+    Page<Project> findAllActiveProjects(Pageable pageable);
 }

@@ -15,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -52,19 +54,17 @@ public class BoardPostServiceImpl implements BoardPostService {
     }
 
     /**
-     * 특정 프로젝트의 모든 게시글 조회 (최신순)
-     * - 프로젝트 멤버만 조회 가능하도록 검증 추가
+     * 특정 프로젝트의 게시글 페이징 조회
      */
     @Transactional(readOnly = true)
     @Override
-    public List<BoardPostResponseDto> getPostsByProjectId(Long projectId, Long userId) {
-        // 1. [공통 검증 호출] 이 유저가 멤버인지 확인 (아니면 예외 발생)
+    public Page<BoardPostResponseDto> getPostsByProjectId(Long projectId, Long userId, Pageable pageable) {
+        // 1. 프로젝트 멤버인지 확인
         validateProjectMember(projectId, userId);
 
-        // 2. 검증 통과 시 게시글 목록 조회 진행
-        return boardPostRepository.findAllByProjectIdOrderByCreatedAtDesc(projectId).stream()
-                .map(post -> BoardPostMapper.mapToResponse(post, userId))
-                .collect(Collectors.toList());
+        // 2. 페이징 조회 진행
+        return boardPostRepository.findAllByProjectId(projectId, pageable)
+                .map(post -> BoardPostMapper.mapToResponse(post, userId));
     }
 
     /**

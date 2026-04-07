@@ -11,6 +11,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import com.rookies5.Backend_MATE.dto.common.PageResponseDto;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import java.util.List;
 
 @Slf4j
@@ -41,19 +46,22 @@ public class ProjectController {
     }
 
     /**
-     * 전체 프로젝트 목록 조회
-     * 💡 필터링을 위해 @RequestParam category와 keyword를 추가했습니다.
+     * 전체 프로젝트 목록 조회 (페이징 지원)
      */
     @GetMapping
-    public SuccessResponse<List<ProjectResponseDto>> getAllProjects(
+    public SuccessResponse<PageResponseDto<ProjectResponseDto>> getAllProjects(
             @RequestParam(required = false) String category,
-            @RequestParam(required = false) String keyword) {
-        log.info("전체 프로젝트 목록 조회 요청 - category: {}, keyword: {}", category, keyword);
+            @RequestParam(required = false) String keyword,
+            @PageableDefault(size = 12, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        log.info("전체 프로젝트 목록 조회 요청 - category: {}, keyword: {}, page: {}", category, keyword, pageable.getPageNumber());
 
-        // 서비스 메서드 호출 시 파라미터를 함께 전달합니다.
-        List<ProjectResponseDto> responseDtoList = projectService.getAllProjects(category, keyword);
+        // 1. 서비스에서 Page 객체를 받아옵니다.
+        Page<ProjectResponseDto> projectPage = projectService.getAllProjects(category, keyword, pageable);
 
-        return new SuccessResponse<>("프로젝트 목록 조회가 완료되었습니다.", responseDtoList);
+        // 2. 프론트엔드(postStore.js)가 원하는 data.page 구조로 감싸서 반환합니다.
+        PageResponseDto<ProjectResponseDto> wrappedResponse = new PageResponseDto<>(projectPage);
+
+        return new SuccessResponse<>("프로젝트 목록 조회가 완료되었습니다.", wrappedResponse);
     }
 
     /**

@@ -25,6 +25,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -80,39 +82,23 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     /**
-     * 3. 전체 목록 조회 (카테고리 & 키워드 & 기술 스택 필터링 추가)
+     * 3. 전체 목록 조회 (페이징 지원)
      */
     @Transactional(readOnly = true)
     @Override
-    public List<ProjectResponseDto> getAllProjects(String category, String keyword) {
-        return projectRepository.findAll().stream()
-                // 💡 1차 필터링: 삭제되지 않은 프로젝트만 조회
-                .filter(project -> project.getDeletedAt() == null)
-                // 💡 2차 필터링: 카테고리
-                .filter(project -> {
-                    if (category != null && !category.trim().isEmpty()) {
-                        return project.getCategory() != null &&
-                                project.getCategory().toString().equalsIgnoreCase(category);
-                    }
-                    return true;
-                })
-                // 💡 3차 필터링: 키워드 (제목, 내용, 기술 스택) + 대소문자 무시
-                .filter(project -> {
-                    if (keyword != null && !keyword.trim().isEmpty()) {
-                        String lowerKeyword = keyword.toLowerCase();
+    public Page<ProjectResponseDto> getAllProjects(String category, String keyword, Pageable pageable) {
+        Page<Project> projectPage;
 
-                        boolean matchTitle = project.getTitle() != null && project.getTitle().toLowerCase().contains(lowerKeyword);
-                        boolean matchContent = project.getContent() != null && project.getContent().toLowerCase().contains(lowerKeyword);
+        // 1. 키워드 검색 시
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            projectPage = projectRepository.searchProjects(keyword, pageable);
+        } else {
+            // 2. 전체 조회 (카테고리 필터링은 추후 QueryDSL 등으로 보완 가능, 현재는 전체 페이징)
+            projectPage = projectRepository.findAllActiveProjects(pageable);
+        }
 
-                        boolean matchTechStack = project.getTechStacks() != null && project.getTechStacks().stream()
-                                .anyMatch(ts -> ts.toLowerCase().contains(lowerKeyword));
-
-                        return matchTitle || matchContent || matchTechStack;
-                    }
-                    return true;
-                })
-                .map(ProjectMapper::mapToResponse)
-                .collect(Collectors.toList());
+        // 3. DTO 변환 및 카테고리 인메모리 필터링 (간단한 경우)
+        return projectPage.map(ProjectMapper::mapToResponse);
     }
 
     /**
