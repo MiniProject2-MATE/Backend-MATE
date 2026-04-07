@@ -28,6 +28,13 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     // 내 신청 현황 조회: 내가 신청했고, 상태가 ACCEPTED가 아닌 것들 (PENDING, REJECTED)
     List<Application> findAllByApplicantIdAndStatusNot(Long applicantId, ApplicationStatus status);
 
+    @Query("SELECT a FROM Application a " +
+            "JOIN a.project p " +
+            "WHERE a.applicant.id = :applicantId " +
+            "AND a.status != com.rookies5.Backend_MATE.entity.enums.ApplicationStatus.ACCEPTED " +
+            "AND p.deletedAt IS NULL")
+    List<Application> findAllPendingByApplicantIdExcludingDeleted(@Param("applicantId") Long applicantId);
+
     //프로젝트 삭제 -> 지원서 삭제
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Application a SET a.deletedAt = CURRENT_TIMESTAMP " +

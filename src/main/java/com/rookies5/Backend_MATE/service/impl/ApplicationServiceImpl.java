@@ -119,7 +119,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     @Override
     @Transactional(readOnly = true)
     public List<ApplicationResponseDto> getMyPendingApplications(Long userId) {
-        return applicationRepository.findAllByApplicantIdAndStatusNot(userId, ApplicationStatus.ACCEPTED)
+        return applicationRepository.findAllPendingByApplicantIdExcludingDeleted(userId)
                 .stream()
                 .map(ApplicationMapper::mapToApplicationResponse)
                 .collect(Collectors.toList());

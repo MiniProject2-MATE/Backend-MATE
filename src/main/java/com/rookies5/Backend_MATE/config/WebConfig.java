@@ -11,6 +11,7 @@ public class WebConfig implements WebMvcConfigurer {
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // 프론트가 /uploads/** 로 요청하면 -> 내 컴퓨터의 mate_uploads 폴더를 뒤져라!
         registry.addResourceHandler("/uploads/**")
+
                 .addResourceLocations("file:///" + System.getProperty("user.home") + "/mate_uploads/");
     }
 }

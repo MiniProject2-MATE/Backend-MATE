@@ -49,6 +49,7 @@ public class ProjectMapper {
                 .id(project.getId())
                 .ownerId(ownerId)
                 .ownerNickname(ownerNickname)
+
                 // 방장의 최신 프로필 이미지 매핑
                 .ownerProfileImg(owner != null ? owner.getProfileImg() : null)
                 .category(project.getCategory())
