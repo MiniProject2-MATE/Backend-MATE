@@ -8,6 +8,7 @@ import com.rookies5.Backend_MATE.entity.User;
 import com.rookies5.Backend_MATE.mapper.ProjectMapper;
 import com.rookies5.Backend_MATE.mapper.UserMapper;
 import com.rookies5.Backend_MATE.repository.AdminLogRepository;
+import com.rookies5.Backend_MATE.repository.ProjectMemberRepository;
 import com.rookies5.Backend_MATE.repository.ProjectRepository;
 import com.rookies5.Backend_MATE.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,7 @@ public class AdminController {
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
     private final AdminLogRepository adminLogRepository;
+    private final ProjectMemberRepository projectMemberRepository;
 
     private final int PAGE_SIZE = 5;
 
@@ -133,12 +135,12 @@ public class AdminController {
         userRepository.softDeleteById(id);
         addLog(user.getNickname() + "님 계정을 삭제했습니다.");
 
+
         // 회원이 작성한 프로젝트도 소프트 삭제
-        List<Project> projects = projectRepository.findAllByOwnerId(id);
-        for (Project p : projects) {
+        projectRepository.findAllByOwnerId(id).forEach(p -> {
             projectRepository.softDeleteById(p.getId());
             addLog(p.getTitle() + " 프로젝트를 삭제했습니다.");
-        }
+        });
 
         if ("users".equals(redirectPage)) {
             return "redirect:/admin/users?userPage=" + userPage;
@@ -192,7 +194,9 @@ public class AdminController {
 
         Project project = projectRepository.findByIdIncludingDeleted(id)
                 .orElseThrow(() -> new RuntimeException("프로젝트 없음"));
+        project.setCurrentCount(0);
         projectRepository.softDeleteById(id);
+        projectMemberRepository.softDeleteAllByProjectId(id);
         addLog(project.getTitle() + " 프로젝트를 삭제했습니다.");
 
         if ("projects".equals(redirectPage)) {
